@@ -1,0 +1,49 @@
+import { Category, LLMPrompt, StoryFigureEntry } from '../types';
+
+const CATEGORY_LABELS: Record<Category, string> = {
+  character: 'דמויות',
+  location: 'מקומות',
+  mood: 'מצבי רוח',
+  object: 'חפצים',
+};
+
+const SYSTEM_PROMPT = `אתה מספר סיפורים לילדים לפני השינה.
+אתה כותב בעברית פשוטה, חמה ומתאימה לגילאי 3-8.
+הסיפור צריך להיות בטוח, חיובי ולא מפחיד, עם עלילה ברורה קצרה ועם סוף טוב ורגוע שמכין לשינה.
+אורך הסיפור: כ-500-800 מילים.
+השתמש בכל הדמויות, המקומות ומצבי הרוח שסופקו, ושלב בעדינות גם חפצים אם ניתנו.
+החזר רק את טקסט הסיפור עצמו כפסקאות רגילות - ללא כותרת, ללא שם לסיפור, ללא תגי Markdown (כמו #, *, -), ללא הערות או הסברים.`;
+
+function groupByCategory(figures: StoryFigureEntry[]): Partial<Record<Category, string[]>> {
+  const groups: Partial<Record<Category, string[]>> = {};
+  for (const figure of figures) {
+    if (!groups[figure.category]) groups[figure.category] = [];
+    groups[figure.category]!.push(figure.name);
+  }
+  return groups;
+}
+
+export function buildPrompt(figures: StoryFigureEntry[], recentHistory: string[] = []): LLMPrompt {
+  const groups = groupByCategory(figures);
+  const lines: string[] = [];
+
+  for (const category of Object.keys(CATEGORY_LABELS) as Category[]) {
+    const names = groups[category];
+    if (names && names.length > 0) {
+      lines.push(`${CATEGORY_LABELS[category]}: ${names.join(', ')}`);
+    }
+  }
+
+  let userContent = `בנה סיפור לילדים לפי הרכיבים הבאים:\n${lines.join('\n')}`;
+
+  if (recentHistory.length > 0) {
+    const openings = recentHistory
+      .map((text, i) => `${i + 1}. ${text.slice(0, 150).trim()}...`)
+      .join('\n');
+    userContent += `\n\nלהלן תחילת סיפורים אחרונים שכבר סופרו - נסה ליצור עלילה שונה מהם ולא לחזור על אותו פתיח או תפנית:\n${openings}`;
+  }
+
+  return { system: SYSTEM_PROMPT, user: userContent };
+}
+
+export { CATEGORY_LABELS };

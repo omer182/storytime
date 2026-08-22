@@ -1,0 +1,15 @@
+{
+  "name": "storytime-ui",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Storytime frontend - bundles src/app.ts into app.js, served as a static file by the server",
+  "scripts": {
+    "build": "esbuild src/app.ts --bundle --outfile=app.js --format=iife --sourcemap",
+    "dev": "esbuild src/app.ts --bundle --outfile=app.js --sourcemap --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0",
+    "typescript": "^5.7.2"
+  }
+}

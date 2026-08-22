@@ -1,0 +1,17 @@
+services:
+  storytime:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - LLM_PROVIDER=anthropic
+      - LLM_MODEL=claude-haiku-4-5-20251001
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - DB_PATH=/app/server/data/stories.db
+    volumes:
+      - ./server/data:/app/server/data
+    restart: unless-stopped

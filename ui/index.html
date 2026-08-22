@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#f4efe6" />
+<title>זמן סיפור</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <h1>זמן סיפור</h1>
+    </header>
+
+    <main>
+      <section id="tab-create" class="tab-panel active">
+        <div id="no-story" class="empty-state">
+          <div class="empty-glyph" aria-hidden="true">
+            <svg viewBox="0 0 48 48" width="56" height="56" fill="none">
+              <path d="M24 10c-4-3-10-4-15-2v26c5-2 11-1 15 2 4-3 10-4 15-2V8c-5-2-11-1-15 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+              <path d="M24 10v26" stroke="currentColor" stroke-width="2"/>
+            </svg>
+          </div>
+          <p>אין סיפור פעיל כרגע</p>
+          <button id="btn-new-story" class="primary large">התחל סיפור חדש</button>
+        </div>
+
+        <div id="active-story" class="hidden">
+          <div class="status-row">
+            <span id="story-status" class="badge"></span>
+            <span id="story-id" class="muted"></span>
+          </div>
+
+          <div id="gate-progress" class="gate-progress">
+            <span class="gate-pill" data-cat="character">דמות</span>
+            <span class="gate-pill" data-cat="location">מקום</span>
+            <span class="gate-pill" data-cat="mood">מצב רוח</span>
+          </div>
+
+          <ul id="added-figures" class="figure-list"></ul>
+
+          <div id="generated-story-wrap" class="hidden">
+            <div id="generated-story" class="story-text"></div>
+            <button id="btn-restart-after" class="primary large">סיפור חדש</button>
+          </div>
+
+          <div id="deck-section">
+            <h2>הוסף דמות</h2>
+            <p class="hint">סימולציית סריקה - לחצו על אסימון</p>
+            <div id="deck"></div>
+            <button id="btn-abandon" class="text-btn">בטל סיפור זה</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="tab-history" class="tab-panel">
+        <div id="history-list"></div>
+      </section>
+    </main>
+
+    <div id="generate-bar" class="generate-bar hidden">
+      <button id="btn-generate" class="primary large" disabled>צור סיפור</button>
+    </div>
+
+    <nav class="bottom-nav">
+      <button class="nav-btn active" data-tab="create">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true">
+          <path d="M12 5c-2-1.5-5-2-7.5-1v13c2.5-1 5.5-.5 7.5 1 2-1.5 5-2 7.5-1V4c-2.5-1-5.5-.5-7.5 1Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+        </svg>
+        <span>סיפור</span>
+      </button>
+      <button class="nav-btn" data-tab="history">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true">
+          <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.8"/>
+          <path d="M12 7.5V12l3 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>היסטוריה</span>
+      </button>
+    </nav>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

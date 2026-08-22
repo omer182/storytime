@@ -1,0 +1,7 @@
+node_modules/
+.env
+server/data/
+server/dist/
+ui/app.js
+ui/app.js.map
+*.log

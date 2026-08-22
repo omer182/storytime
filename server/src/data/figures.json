@@ -1,0 +1,18 @@
+{
+  "PLACEHOLDER-CHAR-01": { "name": "אריה אמיץ", "category": "character", "description": "אריה אמיץ וטוב לב שאוהב לעזור לחברים" },
+  "PLACEHOLDER-CHAR-02": { "name": "ארנבת סקרנית", "category": "character", "description": "ארנבת קטנה שאוהבת לגלות דברים חדשים" },
+  "PLACEHOLDER-CHAR-03": { "name": "דרקון ידידותי", "category": "character", "description": "דרקון גדול ורך לב שנושף בועות במקום אש" },
+  "PLACEHOLDER-CHAR-04": { "name": "רובוט קטן", "category": "character", "description": "רובוט סקרן שלומד להיות חבר טוב" },
+
+  "PLACEHOLDER-LOC-01": { "name": "יער קסום", "category": "location", "description": "יער ירוק ומלא אור שבו קורים דברים קסומים" },
+  "PLACEHOLDER-LOC-02": { "name": "טירה על העננים", "category": "location", "description": "טירה שצפה גבוה בשמיים בין העננים הרכים" },
+  "PLACEHOLDER-LOC-03": { "name": "חוף ים נוצץ", "category": "location", "description": "חוף עם חול נוצץ וגלים שקטים" },
+  "PLACEHOLDER-LOC-04": { "name": "כפר קטן", "category": "location", "description": "כפר חמים עם בתים צבעוניים וגינות פורחות" },
+
+  "PLACEHOLDER-MOOD-01": { "name": "שמחה", "category": "mood", "description": "תחושת שמחה גדולה ואור בלב" },
+  "PLACEHOLDER-MOOD-02": { "name": "הרפתקנות", "category": "mood", "description": "רצון לצאת ולגלות דברים חדשים" },
+  "PLACEHOLDER-MOOD-03": { "name": "רוגע", "category": "mood", "description": "תחושת שקט ובטחון לקראת שינה" },
+
+  "PLACEHOLDER-OBJ-01": { "name": "מפתח זהב", "category": "object", "description": "מפתח קטן שפותח דלתות סודיות" },
+  "PLACEHOLDER-OBJ-02": { "name": "ספר קסום", "category": "object", "description": "ספר עתיק שהסיפורים בו קמים לחיים" }
+}

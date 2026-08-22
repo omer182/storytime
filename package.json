@@ -1,0 +1,14 @@
+{
+  "name": "storytime",
+  "private": true,
+  "description": "Root convenience scripts - server/ and ui/ are independent projects with their own package.json",
+  "scripts": {
+    "dev": "concurrently -n server,ui -c blue,green \"npm:dev --prefix server\" \"npm:dev --prefix ui\"",
+    "build": "npm run build --prefix server && npm run build --prefix ui",
+    "test": "npm test --prefix server",
+    "install:all": "npm install --prefix server && npm install --prefix ui"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}
