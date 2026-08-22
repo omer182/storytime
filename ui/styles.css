@@ -405,64 +405,50 @@ button.text-btn {
   z-index: 10;
 }
 
-/* manage / add-figure tab */
+/* manage tab (figures list) */
 #tab-manage h2 {
   font-size: 0.92rem;
-  margin: 14px 0 4px;
+  margin: 4px 0;
 }
 
-#tab-manage h2:first-child {
-  margin-top: 4px;
+/* new-figure modal (unrecognized scan during story building) */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(58, 53, 46, 0.45);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 20;
 }
 
-#add-figure-form {
+@media (min-width: 640px) {
+  .modal-overlay { align-items: center; }
+}
+
+.modal {
+  background: var(--surface);
+  border-radius: var(--radius) var(--radius) 0 0;
+  padding: 20px 18px max(env(safe-area-inset-bottom, 0px), 18px);
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.15);
+}
+
+@media (min-width: 640px) {
+  .modal { border-radius: var(--radius); }
+}
+
+.modal h2 {
+  margin: 0 0 4px;
+  font-size: 1rem;
+}
+
+#new-figure-form {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  margin-bottom: 8px;
-}
-
-.scan-status {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: 6px;
-  padding: 10dvh 20px 16px;
-  color: var(--muted);
-}
-
-.scan-status p {
-  margin: 0;
-  font-size: 0.9rem;
-}
-
-.scan-pulse {
-  width: 46px;
-  height: 46px;
-  border-radius: 50%;
-  background: var(--primary-soft);
-  position: relative;
-}
-
-.scan-pulse::before,
-.scan-pulse::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  background: var(--primary);
-  opacity: 0.5;
-  animation: scan-pulse 1.8s ease-out infinite;
-}
-
-.scan-pulse::after {
-  animation-delay: 0.6s;
-}
-
-@keyframes scan-pulse {
-  0% { transform: scale(0.6); opacity: 0.5; }
-  100% { transform: scale(1.8); opacity: 0; }
+  margin-top: 10px;
 }
 
 .scanned-uid-row {

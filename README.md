@@ -24,7 +24,7 @@ Both are independent TypeScript projects with their own `package.json`. The fron
 2. Each scan hits `POST /api/stories/:id/figures` with the tag's UID - the ESP32 will call this automatically the instant it reads a tag, and it always returns an `led` hint so the ring can react (`green_pulse` new / `blue_pulse` duplicate / `red_wiggle` unrecognized). The web UI's tap-to-scan deck grid hits the same endpoint, for use without hardware.
 3. Once at least one character, one location, and one mood have been added, `POST /api/stories/:id/generate` calls the configured LLM (Claude Haiku 4.5 by default, ~2c/story) and saves the Hebrew story text.
 4. Generated stories show up in history (`GET /api/stories`) - stories that were only started but never generated don't.
-5. New figures (characters, places, moods, objects) are added from the web UI's "Add" tab, no code changes needed - see [Enrolling new figures](server/README.md#enrolling-new-figures).
+5. Scanning an unrecognized tag opens a small "what is this?" prompt right there in the story-building screen - name it and pick a category, and it's saved to the deck *and* added to the story you're building, no code changes needed. See [Enrolling new figures](server/README.md#enrolling-new-figures).
 
 Full API contract and OpenAPI docs: see [server/README.md](server/README.md) and `/docs` once the server is running.
 

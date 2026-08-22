@@ -59,41 +59,8 @@
       </section>
 
       <section id="tab-manage" class="tab-panel">
-        <h2>הוספת דמות / מקום / מצב-רוח / חפץ</h2>
-
-        <div id="scan-waiting" class="scan-status">
-          <div class="scan-pulse"></div>
-          <p>ממתינים לסריקה…</p>
-          <p class="hint">סרקו תג חדש כדי לשייך אותו לדמות/מקום/מצב רוח/חפץ</p>
-        </div>
-
-        <form id="add-figure-form" class="hidden">
-          <div class="scanned-uid-row">
-            <span class="muted">תג נסרק:</span>
-            <span id="scanned-uid-display" class="uid"></span>
-          </div>
-          <label class="field">
-            <span>קטגוריה</span>
-            <select id="figure-category">
-              <option value="character">דמות</option>
-              <option value="location">מקום</option>
-              <option value="mood">מצב רוח</option>
-              <option value="object">חפץ</option>
-            </select>
-          </label>
-          <label class="field">
-            <span>שם</span>
-            <input id="figure-name" type="text" required />
-          </label>
-          <label class="field">
-            <span>תיאור (אופציונלי)</span>
-            <textarea id="figure-description" rows="2"></textarea>
-          </label>
-          <button type="submit" class="primary large">הוסף</button>
-          <button type="button" id="btn-cancel-add" class="text-btn">ביטול</button>
-        </form>
-
         <h2>הדמויות הקיימות</h2>
+        <p class="hint">דמויות חדשות נוספות תוך כדי סיפור - סרקו תג לא מוכר ותתבקשו לתת לו שם.</p>
         <div id="manage-list"></div>
       </section>
     </main>
@@ -118,14 +85,46 @@
       </button>
       <button class="nav-btn" data-tab="manage">
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true">
-          <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          <path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
         </svg>
-        <span>הוספה</span>
+        <span>דמויות</span>
       </button>
     </nav>
   </div>
 
   <div id="toast" class="toast hidden"></div>
+
+  <div id="new-figure-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <h2>תג לא מוכר</h2>
+      <p class="hint">זו הפעם הראשונה שהתג הזה נסרק. מי/מה זה?</p>
+      <form id="new-figure-form">
+        <div class="scanned-uid-row">
+          <span class="muted">UID:</span>
+          <span id="new-figure-uid" class="uid"></span>
+        </div>
+        <label class="field">
+          <span>קטגוריה</span>
+          <select id="new-figure-category">
+            <option value="character">דמות</option>
+            <option value="location">מקום</option>
+            <option value="mood">מצב רוח</option>
+            <option value="object">חפץ</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>שם</span>
+          <input id="new-figure-name" type="text" required />
+        </label>
+        <label class="field">
+          <span>תיאור (אופציונלי)</span>
+          <textarea id="new-figure-description" rows="2"></textarea>
+        </label>
+        <button type="submit" class="primary large">הוסף לסיפור</button>
+        <button type="button" id="btn-cancel-new-figure" class="text-btn">ביטול</button>
+      </form>
+    </div>
+  </div>
 
   <script src="app.js"></script>
 </body>

@@ -13,8 +13,7 @@ NFC figure scans -> Hebrew bedtime story, via Claude. Also serves the `../ui` fr
 4. `GET /api/stories/:id` -> story + figures + text
 5. `GET /api/stories` -> history list (generated stories only - a story still being collected, or abandoned mid-way, does not show up here)
 6. `GET /api/figures` -> the full deck
-7. `POST /api/figures` `{ uid, name, category, description }` -> register a new figure against a uid (or update an existing uid's details); `DELETE /api/figures/:uid` -> remove one. Backs the UI's "Add" tab - see [Enrolling new figures](#enrolling-new-figures) below.
-8. `POST /api/scans` `{ uid }` -> report a raw scan not tied to any story; `GET /api/scans/latest` -> the most recent one not yet claimed by a figure (or `null`). This is how the "Add" tab finds out a new tag was scanned.
+7. `POST /api/figures` `{ uid, name, category, description }` -> register a new figure against a uid (or update an existing uid's details); `DELETE /api/figures/:uid` -> remove one. This is what the UI calls when you name a newly-scanned tag mid-story - see [Enrolling new figures](#enrolling-new-figures) below.
 
 Full OpenAPI docs at `/docs` once running.
 
@@ -69,16 +68,13 @@ This ships with **SQLite** (`better-sqlite3`), not a separate database server �
 
 Figures (the NFC-tag deck) live in the `figures` table in SQLite, not a file — so they persist across redeploys via the same volume as story history, and don't need a code change or restart to add. On first run, the table is seeded once from `src/data/figures.json`'s placeholder deck (`PLACEHOLDER-CHAR-01`, etc.); after that the DB is the source of truth and the JSON file is no longer read.
 
-To register a real tag, open the UI's **"הוספה" (Add)** tab:
+Registering a real tag happens inline, while building a story - no separate mode:
 
-1. Whatever reads the physical tag POSTs its raw UID to `POST /api/scans` (this will be the ESP32 firmware once it's built - see the repo root README's hardware note). Until then, you can simulate a scan yourself:
-   ```bash
-   curl -X POST http://localhost:3000/api/scans -H "Content-Type: application/json" -d '{"uid":"04A1B2C3"}'
-   ```
-2. The "Add" tab polls `GET /api/scans/latest` and, as soon as an unclaimed scan shows up, displays its UID and reveals a form: category, name, optional description.
-3. Submitting the form calls `POST /api/figures` with that UID - the tag is now part of the deck and scannable into stories. The pending scan clears itself (`GET /api/scans/latest` stops returning it) the moment its UID resolves to a known figure, no extra bookkeeping needed.
+1. Start a story and scan the new tag (the ESP32 will call `POST /api/stories/:id/figures` with its UID once the firmware exists; until then, the UI's own tap-to-scan deck or a direct `curl` to that endpoint works the same way).
+2. An unrecognized UID comes back as `{ recognized: false }`. The UI catches that and opens a "תג לא מוכר" (unrecognized tag) modal on the spot: pick a category, give it a name, optional description.
+3. Submitting the modal calls `POST /api/figures` to register it, then immediately re-submits the same UID to the story - so the new figure is both saved to the deck for next time *and* added to the story you're building right now.
 
-The same tab lists every figure currently in the deck with a delete button, for fixing a mis-scan or retiring a tag.
+The **"דמויות" (Figures)** tab lists everything currently in the deck with a delete button, for fixing a mis-scan or retiring a tag.
 
 ## Config (`.env`)
 
