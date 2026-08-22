@@ -1,4 +1,4 @@
-import { Category, LLMPrompt, StoryFigureEntry } from '../types';
+import { Category, LLMPrompt, StoryFigureEntry, StoryLength } from '../types';
 
 const CATEGORY_LABELS: Record<Category, string> = {
   character: 'דמויות',
@@ -7,12 +7,20 @@ const CATEGORY_LABELS: Record<Category, string> = {
   object: 'חפצים',
 };
 
-const SYSTEM_PROMPT = `אתה מספר סיפורים לילדים לפני השינה.
+const LENGTH_WORD_COUNTS: Record<StoryLength, string> = {
+  short: 'כ-200-300 מילים',
+  medium: 'כ-500-700 מילים',
+  long: 'כ-900-1200 מילים',
+};
+
+function buildSystemPrompt(length: StoryLength): string {
+  return `אתה מספר סיפורים לילדים לפני השינה.
 אתה כותב בעברית פשוטה, חמה ומתאימה לגילאי 3-8.
 הסיפור צריך להיות בטוח, חיובי ולא מפחיד, עם עלילה ברורה קצרה ועם סוף טוב ורגוע שמכין לשינה.
-אורך הסיפור: כ-500-800 מילים.
+אורך הסיפור: ${LENGTH_WORD_COUNTS[length]}.
 השתמש בכל הדמויות, המקומות ומצבי הרוח שסופקו, ושלב בעדינות גם חפצים אם ניתנו.
 החזר רק את טקסט הסיפור עצמו כפסקאות רגילות - ללא כותרת, ללא שם לסיפור, ללא תגי Markdown (כמו #, *, -), ללא הערות או הסברים.`;
+}
 
 function groupByCategory(figures: StoryFigureEntry[]): Partial<Record<Category, string[]>> {
   const groups: Partial<Record<Category, string[]>> = {};
@@ -23,7 +31,11 @@ function groupByCategory(figures: StoryFigureEntry[]): Partial<Record<Category, 
   return groups;
 }
 
-export function buildPrompt(figures: StoryFigureEntry[], recentHistory: string[] = []): LLMPrompt {
+export function buildPrompt(
+  figures: StoryFigureEntry[],
+  recentHistory: string[] = [],
+  length: StoryLength = 'medium'
+): LLMPrompt {
   const groups = groupByCategory(figures);
   const lines: string[] = [];
 
@@ -43,7 +55,7 @@ export function buildPrompt(figures: StoryFigureEntry[], recentHistory: string[]
     userContent += `\n\nלהלן תחילת סיפורים אחרונים שכבר סופרו - נסה ליצור עלילה שונה מהם ולא לחזור על אותו פתיח או תפנית:\n${openings}`;
   }
 
-  return { system: SYSTEM_PROMPT, user: userContent };
+  return { system: buildSystemPrompt(length), user: userContent };
 }
 
 export { CATEGORY_LABELS };

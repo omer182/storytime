@@ -61,6 +61,22 @@
           </div>
 
           <div id="deck-section">
+            <div id="story-options" class="story-options">
+              <div class="option-row">
+                <span class="option-label">אורך הסיפור: <strong id="length-value">בינוני</strong></span>
+                <input type="range" id="length-slider" class="length-slider" min="0" max="2" step="1" value="1" aria-label="אורך הסיפור" autocomplete="off" />
+                <div class="slider-ticks" aria-hidden="true">
+                  <span>קצר</span>
+                  <span>בינוני</span>
+                  <span>ארוך</span>
+                </div>
+              </div>
+              <label class="option-row option-toggle">
+                <span class="option-label">כלול איורים <span class="title-spark" aria-hidden="true">✦</span></span>
+                <input type="checkbox" id="include-images" autocomplete="off" />
+              </label>
+            </div>
+
             <h2>הוסף דמות</h2>
             <p class="hint">סימולציית סריקה - לחצו על אסימון</p>
             <div id="deck"></div>
@@ -111,6 +127,18 @@
   </div>
 
   <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+  <div id="loading-overlay" class="loading-overlay hidden" role="status" aria-live="polite">
+    <div class="loading-card">
+      <div class="loading-spinner-wrap" aria-hidden="true">
+        <span class="sparkle sparkle-1">✦</span>
+        <span class="sparkle sparkle-2">✧</span>
+        <span class="sparkle sparkle-3">✦</span>
+        <div class="loading-spinner"></div>
+      </div>
+      <p id="loading-message">יוצרים סיפור קסום…</p>
+    </div>
+  </div>
 
   <div id="new-figure-modal" class="modal-overlay hidden">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="new-figure-modal-title">

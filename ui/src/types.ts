@@ -1,5 +1,6 @@
 export type Category = 'character' | 'location' | 'mood' | 'object';
 export type StoryStatus = 'collecting' | 'generated';
+export type StoryLength = 'short' | 'medium' | 'long';
 
 export interface Figure {
   uid: string;

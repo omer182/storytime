@@ -1,4 +1,4 @@
-import { Category, Figure, ScanResult, Story, StorySummary } from './types';
+import { Category, Figure, ScanResult, Story, StoryLength, StorySummary } from './types';
 
 const API = '/api';
 const REQUIRED_CATEGORIES: Category[] = ['character', 'location', 'mood'];
@@ -15,6 +15,13 @@ const CATEGORY_ORDER: Category[] = ['character', 'location', 'mood', 'object'];
 const STATUS_LABELS: Record<string, string> = {
   collecting: 'אוסף דמויות',
   generated: 'הסיפור מוכן',
+};
+
+const LENGTH_STEPS: StoryLength[] = ['short', 'medium', 'long'];
+const LENGTH_LABELS: Record<StoryLength, string> = {
+  short: 'קצר',
+  medium: 'בינוני',
+  long: 'ארוך',
 };
 
 class ApiError extends Error {
@@ -65,6 +72,12 @@ const el = {
   newFigureName: byId<HTMLInputElement>('new-figure-name'),
   newFigureDescription: byId<HTMLTextAreaElement>('new-figure-description'),
   btnCancelNewFigure: byId<HTMLButtonElement>('btn-cancel-new-figure'),
+  lengthSlider: byId<HTMLInputElement>('length-slider'),
+  lengthValue: byId<HTMLElement>('length-value'),
+  includeImages: byId<HTMLInputElement>('include-images'),
+  appShell: document.querySelector('.app-shell') as HTMLElement,
+  loadingOverlay: byId<HTMLElement>('loading-overlay'),
+  loadingMessage: byId<HTMLElement>('loading-message'),
 };
 
 let toastTimer: ReturnType<typeof setTimeout> | undefined;
@@ -364,14 +377,37 @@ async function removeFigure(entryId: number): Promise<void> {
   }
 }
 
+function showLoadingOverlay(message: string): void {
+  el.loadingMessage.textContent = message;
+  el.loadingOverlay.classList.remove('hidden');
+  el.appShell.classList.add('blurred');
+}
+
+function hideLoadingOverlay(): void {
+  el.loadingOverlay.classList.add('hidden');
+  el.appShell.classList.remove('blurred');
+}
+
+function updateLengthLabel(): void {
+  const length = LENGTH_STEPS[Number(el.lengthSlider.value)];
+  el.lengthValue.textContent = LENGTH_LABELS[length];
+}
+
 async function generateStory(): Promise<void> {
   if (!currentStory) return;
+  const length = LENGTH_STEPS[Number(el.lengthSlider.value)];
+  const generateImages = el.includeImages.checked;
+
   el.btnGenerate.disabled = true;
   el.btnGenerate.setAttribute('aria-busy', 'true');
   el.btnGenerate.classList.add('loading');
-  el.btnGenerateLabel.textContent = 'יוצר סיפור ואיורים…';
+  el.btnGenerateLabel.textContent = 'יוצר סיפור…';
+  showLoadingOverlay('יוצרים סיפור קסום…');
   try {
-    currentStory = await api<Story>(`/stories/${currentStory.id}/generate`, { method: 'POST' });
+    currentStory = await api<Story>(`/stories/${currentStory.id}/generate`, {
+      method: 'POST',
+      body: JSON.stringify({ length, generateImages }),
+    });
     renderStory();
   } catch (err) {
     if (err instanceof ApiError && err.status === 422) {
@@ -383,6 +419,7 @@ async function generateStory(): Promise<void> {
     el.btnGenerate.removeAttribute('aria-busy');
     el.btnGenerate.classList.remove('loading');
     el.btnGenerateLabel.textContent = 'צור סיפור';
+    hideLoadingOverlay();
     renderStory();
   }
 }
@@ -456,6 +493,7 @@ el.btnCancelNewFigure.addEventListener('click', closeNewFigureModal);
 el.newFigureModal.addEventListener('click', (event) => {
   if (event.target === el.newFigureModal) closeNewFigureModal();
 });
+el.lengthSlider.addEventListener('input', updateLengthLabel);
 
 loadDeck();
 renderStory();

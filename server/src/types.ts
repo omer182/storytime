@@ -16,6 +16,7 @@ export interface StoryFigureEntry {
 }
 
 export type StoryStatus = 'collecting' | 'generated';
+export type StoryLength = 'short' | 'medium' | 'long';
 
 export interface Story {
   id: string;

@@ -6,7 +6,7 @@ import * as figureService from './figureService';
 import { getProvider } from '../llm';
 import { buildPrompt } from '../llm/promptBuilder';
 import { generateStoryImages } from '../llm/imageProvider';
-import { Category, Figure, Story, StoryFigureEntry, StorySummary, StoryStatus } from '../types';
+import { Category, Figure, Story, StoryFigureEntry, StorySummary, StoryStatus, StoryLength } from '../types';
 
 const REQUIRED_CATEGORIES: Category[] = ['character', 'location', 'mood'];
 const RECENT_HISTORY_LIMIT = 3;
@@ -166,7 +166,15 @@ export interface GenerateResult {
   missing?: Category[];
 }
 
-export async function generateStory(storyId: string): Promise<Story | GenerateResult> {
+export interface GenerateOptions {
+  length?: StoryLength;
+  generateImages?: boolean;
+}
+
+export async function generateStory(
+  storyId: string,
+  options: GenerateOptions = {}
+): Promise<Story | GenerateResult> {
   const story = getStory(storyId);
   if (!story) {
     logger.warn({ storyId }, 'generate requested for unknown story');
@@ -179,14 +187,17 @@ export async function generateStory(storyId: string): Promise<Story | GenerateRe
     return { validationError: true, missing };
   }
 
+  const length = options.length || 'medium';
+  const wantsImages = options.generateImages !== false; // opt-out, not opt-in - default true
+
   const log = logger.child({ storyId, llmProvider: config.llmProvider, llmModel: config.llmModel });
   const overallStart = Date.now();
-  log.info({ figureCount: story.figures.length }, 'generating story: starting');
+  log.info({ figureCount: story.figures.length, length, wantsImages }, 'generating story: starting');
 
   const recentRows = recentGeneratedStmt.all(RECENT_HISTORY_LIMIT) as { story_text: string | null }[];
   const recentHistory = recentRows.map((r) => r.story_text).filter((t): t is string => Boolean(t));
 
-  const prompt = buildPrompt(story.figures, recentHistory);
+  const prompt = buildPrompt(story.figures, recentHistory, length);
   const provider = getProvider();
   const textStart = Date.now();
   const storyText = await provider.generateStory(prompt);
@@ -201,7 +212,7 @@ export async function generateStory(storyId: string): Promise<Story | GenerateRe
   // the db, not saved to disk) - they only ever exist in this one response.
   // Skipped in mock mode (llmProvider === 'mock') so tests stay offline even though a real
   // OPENAI_API_KEY may be present in the environment.
-  if (config.generateImages && config.openaiApiKey && config.llmProvider !== 'mock') {
+  if (config.generateImages && config.openaiApiKey && config.llmProvider !== 'mock' && wantsImages) {
     const imagesStart = Date.now();
     try {
       savedStory.images = await generateStoryImages(storyText, story.figures);

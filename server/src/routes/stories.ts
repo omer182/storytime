@@ -113,11 +113,13 @@ router.delete('/stories/:id/figures/:entryId', (req: Request, res: Response) => 
   res.status(204).send();
 });
 
+const VALID_LENGTHS = ['short', 'medium', 'long'];
+
 /**
  * @openapi
  * /api/stories/{id}/generate:
  *   post:
- *     summary: Generate the story text from the scanned figures
+ *     summary: Generate the story text (and, if enabled, illustrations) from the scanned figures
  *     description: >
  *       Requires at least one figure each of category character, location, and mood.
  *       Returns 422 listing which required categories are still missing.
@@ -127,14 +129,33 @@ router.delete('/stories/:id/figures/:entryId', (req: Request, res: Response) => 
  *         name: id
  *         required: true
  *         schema: { type: string }
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               length: { type: string, enum: [short, medium, long], default: medium }
+ *               generateImages: { type: boolean, default: true, description: "per-story opt-out of illustrations (still requires GENERATE_IMAGES/OPENAI_API_KEY to be enabled server-side)" }
  *     responses:
  *       200: { description: Story generated }
+ *       400: { description: Invalid length or generateImages value }
  *       404: { description: Story not found }
  *       422: { description: Missing required categories }
  */
 router.post('/stories/:id/generate', async (req: Request, res: Response) => {
+  const { length, generateImages } = req.body || {};
+
+  if (length !== undefined && !VALID_LENGTHS.includes(length)) {
+    return res.status(400).json({ error: `length must be one of: ${VALID_LENGTHS.join(', ')}` });
+  }
+  if (generateImages !== undefined && typeof generateImages !== 'boolean') {
+    return res.status(400).json({ error: 'generateImages must be a boolean' });
+  }
+
   try {
-    const result = await storyService.generateStory(req.params.id);
+    const result = await storyService.generateStory(req.params.id, { length, generateImages });
     if ('notFound' in result && result.notFound) {
       return res.status(404).json({ error: 'story not found' });
     }
