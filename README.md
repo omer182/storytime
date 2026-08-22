@@ -50,11 +50,50 @@ System tests drive the real backend over HTTP with a mocked LLM provider - no AP
 
 ## Deploying
 
-Runs as a single Docker container - SQLite is an embedded file, not a separate database service. See [server/README.md](server/README.md#deployment-home-server--portainer) for the Portainer/home-server walkthrough.
+Runs as a single Docker container - SQLite is an embedded file, not a separate database service, so there's nothing else to stand up. Every push to `main`/`master` builds and publishes the image to **GHCR** via [.github/workflows/docker-build.yml](.github/workflows/docker-build.yml), tagged `latest`: `ghcr.io/<owner>/<repo>:latest`.
+
+### Docker Compose (local or any Docker host)
+
+From the repo root, builds the image locally from source:
 
 ```bash
 ANTHROPIC_API_KEY=sk-ant-... OPENAI_API_KEY=sk-... docker compose up --build
 ```
+
+### Portainer (home server)
+
+Pulls the pre-built image from GHCR instead of building on the server. Portainer → **Stacks** → **Add stack** → **Web editor**, paste:
+
+```yaml
+services:
+  storytime:
+    image: ghcr.io/<your-github-username>/storytime:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - LLM_PROVIDER=${LLM_PROVIDER}
+      - LLM_MODEL=${LLM_MODEL}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - DB_PATH=/app/server/data/stories.db
+    volumes:
+      - ./data:/app/server/data
+    restart: unless-stopped
+```
+
+Then, in the stack's **Environment variables** section (not in the YAML itself - keeps keys out of the stack definition), add:
+
+| Variable | Example |
+|---|---|
+| `LLM_PROVIDER` | `openai` (or `anthropic`) |
+| `LLM_MODEL` | `gpt-4o` (or `claude-haiku-4-5-20251001`) |
+| `ANTHROPIC_API_KEY` | `sk-ant-...` |
+| `OPENAI_API_KEY` | `sk-...` |
+
+Deploy the stack. To update later, just re-pull: **Stacks → storytime → Pull and redeploy** (or re-run the same "Add stack" with **Update the stack**) - no rebuild needed, it grabs whatever the Action most recently pushed to `latest`.
+
+Full walkthrough (registry visibility, volume/host-path notes, building from the git repo directly in Portainer instead of pulling the image) is in [server/README.md](server/README.md#deployment-home-server--portainer).
 
 ## Status
 
