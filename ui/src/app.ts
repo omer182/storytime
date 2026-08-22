@@ -1,4 +1,4 @@
-import { Category, Figure, ScanResult, Story, StorySummary } from './types';
+import { Category, Figure, PendingScan, ScanResult, Story, StorySummary } from './types';
 
 const API = '/api';
 const REQUIRED_CATEGORIES: Category[] = ['character', 'location', 'mood'];
@@ -55,6 +55,14 @@ const el = {
   btnRestartAfter: byId<HTMLButtonElement>('btn-restart-after'),
   historyList: byId<HTMLElement>('history-list'),
   toast: byId<HTMLElement>('toast'),
+  scanWaiting: byId<HTMLElement>('scan-waiting'),
+  addFigureForm: byId<HTMLFormElement>('add-figure-form'),
+  scannedUidDisplay: byId<HTMLElement>('scanned-uid-display'),
+  figureCategory: byId<HTMLSelectElement>('figure-category'),
+  figureName: byId<HTMLInputElement>('figure-name'),
+  figureDescription: byId<HTMLTextAreaElement>('figure-description'),
+  btnCancelAdd: byId<HTMLButtonElement>('btn-cancel-add'),
+  manageList: byId<HTMLElement>('manage-list'),
 };
 
 let toastTimer: ReturnType<typeof setTimeout> | undefined;
@@ -172,6 +180,97 @@ function renderDeck(): void {
 async function loadDeck(): Promise<void> {
   deck = await api<Figure[]>('/figures');
   renderDeck();
+  renderManageList();
+}
+
+function renderManageList(): void {
+  el.manageList.innerHTML = '';
+  if (deck.length === 0) {
+    el.manageList.innerHTML = '<p class="empty-hint">אין עדיין דמויות</p>';
+    return;
+  }
+  deck.forEach((figure) => {
+    const item = document.createElement('div');
+    item.className = 'manage-item';
+
+    const info = document.createElement('div');
+    info.className = 'manage-item-info';
+    const name = document.createElement('span');
+    name.className = 'name';
+    name.textContent = `${figure.name} (${CATEGORY_LABELS[figure.category]})`;
+    const uid = document.createElement('span');
+    uid.className = 'uid';
+    uid.textContent = figure.uid;
+    info.appendChild(name);
+    info.appendChild(uid);
+
+    const removeBtn = document.createElement('button');
+    removeBtn.textContent = '✕';
+    removeBtn.title = 'הסר';
+    removeBtn.addEventListener('click', () => deleteFigureFromDeck(figure.uid));
+
+    item.appendChild(info);
+    item.appendChild(removeBtn);
+    el.manageList.appendChild(item);
+  });
+}
+
+let pendingScanUid: string | null = null;
+
+function showScanForm(uid: string): void {
+  pendingScanUid = uid;
+  el.scannedUidDisplay.textContent = uid;
+  el.scanWaiting.classList.add('hidden');
+  el.addFigureForm.classList.remove('hidden');
+  el.figureName.focus();
+}
+
+function showScanWaiting(): void {
+  pendingScanUid = null;
+  el.addFigureForm.reset();
+  el.addFigureForm.classList.add('hidden');
+  el.scanWaiting.classList.remove('hidden');
+}
+
+async function pollForScan(): Promise<void> {
+  if (pendingScanUid) return; // a scan is already being filled in - don't interrupt it
+  try {
+    const scan = await api<PendingScan | null>('/scans/latest');
+    if (scan) showScanForm(scan.uid);
+  } catch {
+    // polling failure is silent - it just retries on the next tick
+  }
+}
+
+async function addFigureToDeck(event: Event): Promise<void> {
+  event.preventDefault();
+  if (!pendingScanUid) return;
+  const name = el.figureName.value.trim();
+  const category = el.figureCategory.value as Category;
+  const description = el.figureDescription.value.trim();
+
+  if (!name) return;
+
+  try {
+    await api('/figures', {
+      method: 'POST',
+      body: JSON.stringify({ uid: pendingScanUid, name, category, description }),
+    });
+    showToast(`נוסף: ${name}`);
+    showScanWaiting();
+    await loadDeck();
+  } catch (err) {
+    showToast((err as Error).message);
+  }
+}
+
+async function deleteFigureFromDeck(uid: string): Promise<void> {
+  try {
+    await api(`/figures/${encodeURIComponent(uid)}`, { method: 'DELETE' });
+    await loadDeck();
+  } catch (err) {
+    showToast((err as Error).message);
+  }
 }
 
 async function newStory(): Promise<void> {
@@ -292,6 +391,9 @@ el.btnNewStory.addEventListener('click', newStory);
 el.btnAbandon.addEventListener('click', abandonStory);
 el.btnRestartAfter.addEventListener('click', abandonStory);
 el.btnGenerate.addEventListener('click', generateStory);
+el.addFigureForm.addEventListener('submit', addFigureToDeck);
+el.btnCancelAdd.addEventListener('click', showScanWaiting);
+setInterval(pollForScan, 1500);
 
 loadDeck();
 renderStory();

@@ -57,6 +57,45 @@
       <section id="tab-history" class="tab-panel">
         <div id="history-list"></div>
       </section>
+
+      <section id="tab-manage" class="tab-panel">
+        <h2>הוספת דמות / מקום / מצב-רוח / חפץ</h2>
+
+        <div id="scan-waiting" class="scan-status">
+          <div class="scan-pulse"></div>
+          <p>ממתינים לסריקה…</p>
+          <p class="hint">סרקו תג חדש כדי לשייך אותו לדמות/מקום/מצב רוח/חפץ</p>
+        </div>
+
+        <form id="add-figure-form" class="hidden">
+          <div class="scanned-uid-row">
+            <span class="muted">תג נסרק:</span>
+            <span id="scanned-uid-display" class="uid"></span>
+          </div>
+          <label class="field">
+            <span>קטגוריה</span>
+            <select id="figure-category">
+              <option value="character">דמות</option>
+              <option value="location">מקום</option>
+              <option value="mood">מצב רוח</option>
+              <option value="object">חפץ</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>שם</span>
+            <input id="figure-name" type="text" required />
+          </label>
+          <label class="field">
+            <span>תיאור (אופציונלי)</span>
+            <textarea id="figure-description" rows="2"></textarea>
+          </label>
+          <button type="submit" class="primary large">הוסף</button>
+          <button type="button" id="btn-cancel-add" class="text-btn">ביטול</button>
+        </form>
+
+        <h2>הדמויות הקיימות</h2>
+        <div id="manage-list"></div>
+      </section>
     </main>
 
     <div id="generate-bar" class="generate-bar hidden">
@@ -76,6 +115,12 @@
           <path d="M12 7.5V12l3 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
         <span>היסטוריה</span>
+      </button>
+      <button class="nav-btn" data-tab="manage">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true">
+          <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+        <span>הוספה</span>
       </button>
     </nav>
   </div>

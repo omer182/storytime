@@ -34,6 +34,11 @@ export interface StorySummary {
   snippet: string | null;
 }
 
+export interface PendingScan {
+  uid: string;
+  scannedAt: string;
+}
+
 export interface ScanResult {
   recognized: boolean;
   duplicate?: boolean;

@@ -29,6 +29,14 @@ db.exec(`
   );
 
   CREATE INDEX IF NOT EXISTS idx_story_figures_story_id ON story_figures(story_id);
+
+  CREATE TABLE IF NOT EXISTS figures (
+    uid TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    category TEXT NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL
+  );
 `);
 
 export default db;

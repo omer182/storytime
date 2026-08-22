@@ -405,6 +405,149 @@ button.text-btn {
   z-index: 10;
 }
 
+/* manage / add-figure tab */
+#tab-manage h2 {
+  font-size: 0.92rem;
+  margin: 14px 0 4px;
+}
+
+#tab-manage h2:first-child {
+  margin-top: 4px;
+}
+
+#add-figure-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.scan-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+  padding: 10dvh 20px 16px;
+  color: var(--muted);
+}
+
+.scan-status p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.scan-pulse {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: var(--primary-soft);
+  position: relative;
+}
+
+.scan-pulse::before,
+.scan-pulse::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--primary);
+  opacity: 0.5;
+  animation: scan-pulse 1.8s ease-out infinite;
+}
+
+.scan-pulse::after {
+  animation-delay: 0.6s;
+}
+
+@keyframes scan-pulse {
+  0% { transform: scale(0.6); opacity: 0.5; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+
+.scanned-uid-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface-sunken);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-size: 0.82rem;
+}
+
+.scanned-uid-row .uid {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  direction: ltr;
+  font-weight: 600;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.field select,
+.field input,
+.field textarea {
+  font-family: inherit;
+  font-size: 0.92rem;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 9px 12px;
+}
+
+.field textarea {
+  resize: vertical;
+  font-family: inherit;
+}
+
+.manage-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 9px 12px;
+  margin-bottom: 6px;
+  box-shadow: var(--shadow);
+}
+
+.manage-item-info {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.manage-item-info .name {
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.manage-item-info .uid {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.72rem;
+  color: var(--muted);
+  direction: ltr;
+}
+
+.manage-item button {
+  border: none;
+  background: none;
+  padding: 2px 5px;
+  border-radius: 50%;
+  color: var(--danger);
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
 /* wider screens: keep the mobile layout centered */
 @media (min-width: 640px) {
   .app-shell { max-width: 560px; margin: 0 auto; box-shadow: 0 0 0 1px var(--border); }

@@ -7,6 +7,7 @@ import swaggerSpec from './swagger';
 import healthRoutes from './routes/health';
 import figureRoutes from './routes/figures';
 import storyRoutes from './routes/stories';
+import scanRoutes from './routes/scans';
 
 const app = express();
 
@@ -18,6 +19,7 @@ app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use('/api', healthRoutes);
 app.use('/api', figureRoutes);
 app.use('/api', storyRoutes);
+app.use('/api', scanRoutes);
 
 // serve the frontend as static files so the whole app is one process/port
 app.use(express.static(path.join(__dirname, '..', '..', 'ui')));
