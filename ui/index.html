@@ -3,27 +3,38 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<meta name="theme-color" content="#f4efe6" />
+<meta name="theme-color" content="#3d2b1f" />
 <title>זמן סיפור</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Suez+One&family=Frank+Ruhl+Libre:wght@400;500;700;900&family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <div class="app-shell">
     <header class="topbar">
-      <h1>זמן סיפור</h1>
+      <h1><span class="title-spark" aria-hidden="true">✦</span>זמן סיפור<span class="title-spark" aria-hidden="true">✦</span></h1>
+      <svg class="title-flourish" viewBox="0 0 200 14" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M0 7 Q 50 -2 100 7 T 200 7" fill="none" stroke="currentColor" stroke-width="1.4"/>
+        <circle cx="100" cy="7" r="2.6" fill="currentColor"/>
+      </svg>
     </header>
 
     <main>
       <section id="tab-create" class="tab-panel active">
         <div id="no-story" class="empty-state">
           <div class="empty-glyph" aria-hidden="true">
+            <span class="sparkle sparkle-1">✦</span>
+            <span class="sparkle sparkle-2">✧</span>
+            <span class="sparkle sparkle-3">✦</span>
             <svg viewBox="0 0 48 48" width="56" height="56" fill="none">
               <path d="M24 10c-4-3-10-4-15-2v26c5-2 11-1 15 2 4-3 10-4 15-2V8c-5-2-11-1-15 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
               <path d="M24 10v26" stroke="currentColor" stroke-width="2"/>
             </svg>
           </div>
-          <p>אין סיפור פעיל כרגע</p>
-          <button id="btn-new-story" class="primary large">התחל סיפור חדש</button>
+          <p class="empty-title">אין סיפור פעיל כרגע</p>
+          <p class="empty-sub">התחילו סיפור חדש והזמינו את הדמויות שלכם להרפתקה</p>
+          <button id="btn-new-story" class="primary large">✦ התחל סיפור חדש ✦</button>
         </div>
 
         <div id="active-story" class="hidden">
@@ -41,8 +52,12 @@
           <ul id="added-figures" class="figure-list"></ul>
 
           <div id="generated-story-wrap" class="hidden">
-            <div id="generated-story" class="story-text"></div>
-            <button id="btn-restart-after" class="primary large">סיפור חדש</button>
+            <div class="story-page">
+              <div class="story-ornament story-ornament-top" aria-hidden="true">❧</div>
+              <div id="generated-story" class="story-text"></div>
+              <div class="story-ornament story-ornament-bottom" aria-hidden="true">❧</div>
+            </div>
+            <button id="btn-restart-after" class="primary large">✦ סיפור חדש ✦</button>
           </div>
 
           <div id="deck-section">
