@@ -21,7 +21,7 @@
     </header>
 
     <main>
-      <section id="tab-create" class="tab-panel active">
+      <section id="tab-create" class="tab-panel active" role="tabpanel" aria-labelledby="nav-create">
         <div id="no-story" class="empty-state">
           <div class="empty-glyph" aria-hidden="true">
             <span class="sparkle sparkle-1">✦</span>
@@ -69,11 +69,11 @@
         </div>
       </section>
 
-      <section id="tab-history" class="tab-panel">
+      <section id="tab-history" class="tab-panel" role="tabpanel" aria-labelledby="nav-history">
         <div id="history-list"></div>
       </section>
 
-      <section id="tab-manage" class="tab-panel">
+      <section id="tab-manage" class="tab-panel" role="tabpanel" aria-labelledby="nav-manage">
         <h2>הדמויות הקיימות</h2>
         <p class="hint">דמויות חדשות נוספות תוך כדי סיפור - סרקו תג לא מוכר ותתבקשו לתת לו שם.</p>
         <div id="manage-list"></div>
@@ -81,24 +81,27 @@
     </main>
 
     <div id="generate-bar" class="generate-bar hidden">
-      <button id="btn-generate" class="primary large" disabled>צור סיפור</button>
+      <button id="btn-generate" class="primary large" disabled>
+        <span class="btn-spinner" aria-hidden="true"></span>
+        <span id="btn-generate-label">צור סיפור</span>
+      </button>
     </div>
 
-    <nav class="bottom-nav">
-      <button class="nav-btn active" data-tab="create">
+    <nav class="bottom-nav" role="tablist" aria-label="ניווט ראשי">
+      <button id="nav-create" class="nav-btn active" data-tab="create" role="tab" aria-selected="true" aria-controls="tab-create">
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true">
           <path d="M12 5c-2-1.5-5-2-7.5-1v13c2.5-1 5.5-.5 7.5 1 2-1.5 5-2 7.5-1V4c-2.5-1-5.5-.5-7.5 1Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
         </svg>
         <span>סיפור</span>
       </button>
-      <button class="nav-btn" data-tab="history">
+      <button id="nav-history" class="nav-btn" data-tab="history" role="tab" aria-selected="false" aria-controls="tab-history">
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true">
           <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.8"/>
           <path d="M12 7.5V12l3 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
         <span>היסטוריה</span>
       </button>
-      <button class="nav-btn" data-tab="manage">
+      <button id="nav-manage" class="nav-btn" data-tab="manage" role="tab" aria-selected="false" aria-controls="tab-manage">
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true">
           <path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
         </svg>
@@ -107,11 +110,11 @@
     </nav>
   </div>
 
-  <div id="toast" class="toast hidden"></div>
+  <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
 
   <div id="new-figure-modal" class="modal-overlay hidden">
-    <div class="modal">
-      <h2>תג לא מוכר</h2>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="new-figure-modal-title">
+      <h2 id="new-figure-modal-title">תג לא מוכר</h2>
       <p class="hint">זו הפעם הראשונה שהתג הזה נסרק. מי/מה זה?</p>
       <form id="new-figure-form">
         <div class="scanned-uid-row">

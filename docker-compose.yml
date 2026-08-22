@@ -11,6 +11,7 @@ services:
       - LLM_MODEL=claude-haiku-4-5-20251001
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - GENERATE_IMAGES=${GENERATE_IMAGES:-true}
       - DB_PATH=/app/server/data/stories.db
     volumes:
       - ./server/data:/app/server/data

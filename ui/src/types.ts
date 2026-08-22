@@ -23,6 +23,8 @@ export interface Story {
   createdAt: string;
   generatedAt: string | null;
   figures: StoryFigureEntry[];
+  // only present right after generating - never persisted, so a later GET won't have them
+  images?: string[];
 }
 
 export interface StorySummary {

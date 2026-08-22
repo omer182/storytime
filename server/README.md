@@ -9,7 +9,7 @@ NFC figure scans -> Hebrew bedtime story, via Claude. Also serves the `../ui` fr
    - unknown tag -> `{ recognized: false, led: "red_wiggle" }`
    - already-added tag -> `{ recognized: true, duplicate: true, led: "blue_pulse", ... }`
    - new tag -> `{ recognized: true, duplicate: false, led: "green_pulse", ... }`
-3. `POST /api/stories/:id/generate` -> requires at least one figure each of category `character`, `location`, `mood`. Missing ones come back as `422 { missing: [...] }`. On success, calls Claude and saves the story text.
+3. `POST /api/stories/:id/generate` -> requires at least one figure each of category `character`, `location`, `mood`. Missing ones come back as `422 { missing: [...] }`. On success, calls the configured LLM and saves the story text, then (if `GENERATE_IMAGES=true` and `OPENAI_API_KEY` is set) generates 3 illustrations - start/middle/end - and returns them as `images: string[]` (base64 data URLs) on this response only. Images are **not persisted** - not written to the db, not saved to disk - so a later `GET` of the same story has no `images` field; they only ever exist in the browser session that just generated them.
 4. `GET /api/stories/:id` -> story + figures + text
 5. `GET /api/stories` -> history list (generated stories only - a story still being collected, or abandoned mid-way, does not show up here)
 6. `GET /api/figures` -> the full deck
@@ -84,8 +84,20 @@ The **"דמויות" (Figures)** tab lists everything currently in the deck with
 | `LLM_PROVIDER` | `anthropic` | `anthropic` \| `openai` \| `mock` |
 | `LLM_MODEL` | `claude-haiku-4-5-20251001` | cheap + plenty good for bedtime stories, ~2c/story. Set to an OpenAI model (e.g. `gpt-4o`) when `LLM_PROVIDER=openai` |
 | `ANTHROPIC_API_KEY` | — | required when `LLM_PROVIDER=anthropic` |
-| `OPENAI_API_KEY` | — | required when `LLM_PROVIDER=openai` |
+| `OPENAI_API_KEY` | — | required when `LLM_PROVIDER=openai`, **and** required for illustrations regardless of `LLM_PROVIDER` (Claude has no image generation) |
+| `GENERATE_IMAGES` | `true` | set `false` to turn off illustrations even when `OPENAI_API_KEY` is set |
+| `IMAGE_MODEL` | `gpt-image-1.5` | ~$0.03-0.05/image at medium quality -> ~$0.10-0.15/story for the 3 illustrations |
 | `DB_PATH` | `server/data/stories.db` | |
 | `FIGURES_PATH` | `server/src/data/figures.json` | only read once, to seed the `figures` table when it's empty (fresh DB) |
 
 No auth — this is designed for a closed home network only.
+
+## Illustrations
+
+`POST /api/stories/:id/generate` optionally generates 3 illustrations alongside the story text (`src/llm/imageProvider.ts`), gated on `GENERATE_IMAGES` and an `OPENAI_API_KEY` being set - independent of `LLM_PROVIDER`, since only OpenAI's image API is wired up.
+
+1. The full generated story text and cast are sent to `gpt-4o`, which writes exactly 3 English image prompts (opening / a key middle moment / ending). The prompt requires every prompt to stick to characters and settings that literally appear in the story (no invented characters), to describe each recurring character's concrete appearance the same way every time (so they read as the same character across the 3 images), to end with an identical fixed style instruction ("Disney/Pixar-style 2D animated..."), and to never include any text, letters, or speech bubbles in the image.
+2. The 3 images are generated **in parallel** via `IMAGE_MODEL` (`client.images.generate`) - this is what keeps a 3-image story generation to ~30-35s instead of ~80s+ sequential.
+3. Images come back as base64 data URLs and are **never persisted** - not to SQLite, not to disk. They exist only in that one `POST /generate` response; the UI interleaves them into the story (start / middle / end) for that viewing, and a later `GET` of the same story has no images.
+
+Consistency isn't perfect - each image call is independent, so minor drift (e.g. a character's color) can happen between the 3 images despite the repeated description. Good enough for a first pass; tightening this further would mean a different approach (e.g. image-to-image conditioning on a reference image) rather than prompt wording alone.

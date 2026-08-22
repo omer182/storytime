@@ -22,7 +22,7 @@ Both are independent TypeScript projects with their own `package.json`. The fron
 
 1. `POST /api/stories` starts a new story (`status: "collecting"`).
 2. Each scan hits `POST /api/stories/:id/figures` with the tag's UID - the ESP32 will call this automatically the instant it reads a tag, and it always returns an `led` hint so the ring can react (`green_pulse` new / `blue_pulse` duplicate / `red_wiggle` unrecognized). The web UI's tap-to-scan deck grid hits the same endpoint, for use without hardware.
-3. Once at least one character, one location, and one mood have been added, `POST /api/stories/:id/generate` calls the configured LLM (Claude Haiku 4.5 by default, ~2c/story) and saves the Hebrew story text.
+3. Once at least one character, one location, and one mood have been added, `POST /api/stories/:id/generate` calls the configured LLM (Claude Haiku 4.5 by default, ~2c/story) and saves the Hebrew story text, then (if configured) generates 3 Disney/Pixar-style illustrations - opening, middle, ending - in parallel via OpenAI's image API, staying strictly on the actual plot and cast. Illustrations are never saved - they're returned once on the generate response and shown interleaved in the story, nothing more. See [Illustrations](server/README.md#illustrations).
 4. Generated stories show up in history (`GET /api/stories`) - stories that were only started but never generated don't.
 5. Scanning an unrecognized tag opens a small "what is this?" prompt right there in the story-building screen - name it and pick a category, and it's saved to the deck *and* added to the story you're building, no code changes needed. See [Enrolling new figures](server/README.md#enrolling-new-figures).
 
@@ -76,6 +76,7 @@ services:
       - LLM_MODEL=${LLM_MODEL}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - GENERATE_IMAGES=${GENERATE_IMAGES}
       - DB_PATH=/app/server/data/stories.db
     volumes:
       - ./data:/app/server/data
@@ -89,7 +90,8 @@ Then, in the stack's **Environment variables** section (not in the YAML itself -
 | `LLM_PROVIDER` | `openai` (or `anthropic`) |
 | `LLM_MODEL` | `gpt-4o` (or `claude-haiku-4-5-20251001`) |
 | `ANTHROPIC_API_KEY` | `sk-ant-...` |
-| `OPENAI_API_KEY` | `sk-...` |
+| `OPENAI_API_KEY` | `sk-...` (also required for illustrations, regardless of `LLM_PROVIDER`) |
+| `GENERATE_IMAGES` | `true` (or `false` to turn off illustrations) |
 
 Deploy the stack. To update later, just re-pull: **Stacks → storytime → Pull and redeploy** (or re-run the same "Add stack" with **Update the stack**) - no rebuild needed, it grabs whatever the Action most recently pushed to `latest`.
 
@@ -101,6 +103,7 @@ Full walkthrough (registry visibility, volume/host-path notes, building from the
 - [x] Web UI (mobile-first, Hebrew RTL)
 - [x] Figure enrollment from the UI (no code changes to add a new figure/tag)
 - [x] Multi-provider LLM support (Claude, OpenAI)
+- [x] AI-generated illustrations (3 per story, plot-locked, never persisted)
 - [x] System tests
 - [x] TypeScript throughout
 - [x] Docker image + CI (GitHub Actions: PR checks, GHCR publish on push to main)

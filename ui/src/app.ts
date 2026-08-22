@@ -53,10 +53,12 @@ const el = {
   btnNewStory: byId<HTMLButtonElement>('btn-new-story'),
   btnAbandon: byId<HTMLButtonElement>('btn-abandon'),
   btnRestartAfter: byId<HTMLButtonElement>('btn-restart-after'),
+  btnGenerateLabel: byId<HTMLElement>('btn-generate-label'),
   historyList: byId<HTMLElement>('history-list'),
   toast: byId<HTMLElement>('toast'),
   manageList: byId<HTMLElement>('manage-list'),
   newFigureModal: byId<HTMLElement>('new-figure-modal'),
+  newFigureModalDialog: byId<HTMLElement>('new-figure-modal').querySelector('.modal') as HTMLElement,
   newFigureForm: byId<HTMLFormElement>('new-figure-form'),
   newFigureUid: byId<HTMLElement>('new-figure-uid'),
   newFigureCategory: byId<HTMLSelectElement>('new-figure-category'),
@@ -89,6 +91,36 @@ async function api<T>(path: string, options?: RequestInit): Promise<T> {
 function missingCategories(figures: { category: Category }[]): Category[] {
   const present = new Set(figures.map((f) => f.category));
   return REQUIRED_CATEGORIES.filter((cat) => !present.has(cat));
+}
+
+function renderGeneratedStory(storyText: string, images?: string[]): void {
+  el.generatedStory.innerHTML = '';
+
+  const addImage = (src: string, alt: string) => {
+    const img = document.createElement('img');
+    img.src = src;
+    img.alt = alt;
+    img.className = 'story-illustration';
+    el.generatedStory.appendChild(img);
+  };
+
+  const paragraphs = storyText
+    .split(/\n{2,}/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+  const hasImages = !!images && images.length >= 3;
+  const middleIndex = Math.floor((paragraphs.length - 1) / 2);
+
+  if (hasImages) addImage(images![0], 'איור פתיחת הסיפור');
+
+  paragraphs.forEach((text, i) => {
+    const p = document.createElement('p');
+    p.textContent = text;
+    el.generatedStory.appendChild(p);
+    if (hasImages && i === middleIndex) addImage(images![1], 'איור מאמצע הסיפור');
+  });
+
+  if (hasImages) addImage(images![2], 'איור סיום הסיפור');
 }
 
 function renderStory(): void {
@@ -125,6 +157,7 @@ function renderStory(): void {
       const removeBtn = document.createElement('button');
       removeBtn.textContent = '✕';
       removeBtn.title = 'הסר';
+      removeBtn.setAttribute('aria-label', `הסר את ${f.name}`);
       removeBtn.addEventListener('click', () => removeFigure(f.entryId));
       li.appendChild(removeBtn);
     }
@@ -132,7 +165,7 @@ function renderStory(): void {
   });
 
   if (isGenerated && currentStory.storyText) {
-    el.generatedStory.textContent = currentStory.storyText;
+    renderGeneratedStory(currentStory.storyText, currentStory.images);
     el.generatedWrap.classList.remove('hidden');
     el.deckSection.classList.add('hidden');
     el.generateBar.classList.add('hidden');
@@ -168,6 +201,7 @@ function renderDeck(): void {
       const btn = document.createElement('button');
       btn.className = 'token-btn';
       btn.textContent = figure.name;
+      btn.setAttribute('aria-label', `סרוק את ${figure.name} (${CATEGORY_LABELS[cat]})`);
       btn.addEventListener('click', () => scanFigure(figure.uid));
       row.appendChild(btn);
     });
@@ -207,6 +241,7 @@ function renderManageList(): void {
     const removeBtn = document.createElement('button');
     removeBtn.textContent = '✕';
     removeBtn.title = 'הסר';
+    removeBtn.setAttribute('aria-label', `הסר את ${figure.name}`);
     removeBtn.addEventListener('click', () => deleteFigureFromDeck(figure.uid));
 
     item.appendChild(info);
@@ -216,18 +251,46 @@ function renderManageList(): void {
 }
 
 let pendingUnknownUid: string | null = null;
+let modalReturnFocus: HTMLElement | null = null;
 
 function openNewFigureModal(uid: string): void {
   pendingUnknownUid = uid;
+  modalReturnFocus = document.activeElement as HTMLElement;
   el.newFigureUid.textContent = uid;
   el.newFigureModal.classList.remove('hidden');
   el.newFigureName.focus();
+  document.addEventListener('keydown', onModalKeydown);
 }
 
 function closeNewFigureModal(): void {
   pendingUnknownUid = null;
   el.newFigureForm.reset();
   el.newFigureModal.classList.add('hidden');
+  document.removeEventListener('keydown', onModalKeydown);
+  modalReturnFocus?.focus();
+  modalReturnFocus = null;
+}
+
+function onModalKeydown(event: KeyboardEvent): void {
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    closeNewFigureModal();
+    return;
+  }
+  if (event.key !== 'Tab') return;
+  const focusable = el.newFigureModalDialog.querySelectorAll<HTMLElement>(
+    'button, input, select, textarea, [tabindex]:not([tabindex="-1"])'
+  );
+  if (focusable.length === 0) return;
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
 }
 
 async function submitNewFigure(event: Event): Promise<void> {
@@ -304,7 +367,9 @@ async function removeFigure(entryId: number): Promise<void> {
 async function generateStory(): Promise<void> {
   if (!currentStory) return;
   el.btnGenerate.disabled = true;
-  el.btnGenerate.textContent = 'יוצר סיפור…';
+  el.btnGenerate.setAttribute('aria-busy', 'true');
+  el.btnGenerate.classList.add('loading');
+  el.btnGenerateLabel.textContent = 'יוצר סיפור ואיורים…';
   try {
     currentStory = await api<Story>(`/stories/${currentStory.id}/generate`, { method: 'POST' });
     renderStory();
@@ -315,7 +380,9 @@ async function generateStory(): Promise<void> {
       showToast((err as Error).message);
     }
   } finally {
-    el.btnGenerate.textContent = 'צור סיפור';
+    el.btnGenerate.removeAttribute('aria-busy');
+    el.btnGenerate.classList.remove('loading');
+    el.btnGenerateLabel.textContent = 'צור סיפור';
     renderStory();
   }
 }
@@ -368,9 +435,13 @@ async function toggleHistoryStory(container: HTMLElement, storyId: string): Prom
 
 document.querySelectorAll<HTMLButtonElement>('.nav-btn').forEach((btn) => {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('.nav-btn').forEach((b) => b.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach((b) => {
+      b.classList.remove('active');
+      b.setAttribute('aria-selected', 'false');
+    });
     document.querySelectorAll('.tab-panel').forEach((p) => p.classList.remove('active'));
     btn.classList.add('active');
+    btn.setAttribute('aria-selected', 'true');
     byId(`tab-${btn.dataset.tab}`).classList.add('active');
     if (btn.dataset.tab === 'history') loadHistory();
   });
@@ -382,6 +453,9 @@ el.btnRestartAfter.addEventListener('click', abandonStory);
 el.btnGenerate.addEventListener('click', generateStory);
 el.newFigureForm.addEventListener('submit', submitNewFigure);
 el.btnCancelNewFigure.addEventListener('click', closeNewFigureModal);
+el.newFigureModal.addEventListener('click', (event) => {
+  if (event.target === el.newFigureModal) closeNewFigureModal();
+});
 
 loadDeck();
 renderStory();
