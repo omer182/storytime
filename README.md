@@ -78,6 +78,7 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - GENERATE_IMAGES=${GENERATE_IMAGES}
       - DB_PATH=/app/server/data/stories.db
+      - LOG_LEVEL=${LOG_LEVEL}
     volumes:
       - ./data:/app/server/data
     restart: unless-stopped
@@ -92,8 +93,11 @@ Then, in the stack's **Environment variables** section (not in the YAML itself -
 | `ANTHROPIC_API_KEY` | `sk-ant-...` |
 | `OPENAI_API_KEY` | `sk-...` (also required for illustrations, regardless of `LLM_PROVIDER`) |
 | `GENERATE_IMAGES` | `true` (or `false` to turn off illustrations) |
+| `LOG_LEVEL` | `info` (`debug` for full LLM/image call detail, `warn` for quieter logs) |
 
 Deploy the stack. To update later, just re-pull: **Stacks → storytime → Pull and redeploy** (or re-run the same "Add stack" with **Update the stack**) - no rebuild needed, it grabs whatever the Action most recently pushed to `latest`.
+
+Logs (every request, scan, figure enrollment, story generation with timing) show up live in **Containers → storytime → Logs** - see [server/README.md](server/README.md#logs).
 
 Full walkthrough (registry visibility, volume/host-path notes, building from the git repo directly in Portainer instead of pulling the image) is in [server/README.md](server/README.md#deployment-home-server--portainer).
 
@@ -104,6 +108,7 @@ Full walkthrough (registry visibility, volume/host-path notes, building from the
 - [x] Figure enrollment from the UI (no code changes to add a new figure/tag)
 - [x] Multi-provider LLM support (Claude, OpenAI)
 - [x] AI-generated illustrations (3 per story, plot-locked, never persisted)
+- [x] Structured logging (pino) - requests, scans, generation timing
 - [x] System tests
 - [x] TypeScript throughout
 - [x] Docker image + CI (GitHub Actions: PR checks, GHCR publish on push to main)

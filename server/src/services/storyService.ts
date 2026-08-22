@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
 import db from '../data/db';
 import config from '../config';
+import logger from '../logger';
 import * as figureService from './figureService';
 import { getProvider } from '../llm';
 import { buildPrompt } from '../llm/promptBuilder';
@@ -66,6 +67,7 @@ function rowToStory(row: StoryRow, figures: StoryFigureRow[]): Story {
 export function createStory(): Story {
   const id = randomUUID();
   insertStoryStmt.run(id, 'collecting', new Date().toISOString());
+  logger.info({ storyId: id }, 'story created');
   return getStory(id) as Story;
 }
 
@@ -107,16 +109,21 @@ export interface ScanResult {
 
 export function addFigure(storyId: string, rawUid: string): ScanResult {
   const story = getStoryStmt.get(storyId) as StoryRow | undefined;
-  if (!story) return { notFound: true };
+  if (!story) {
+    logger.warn({ storyId }, 'scan against unknown story');
+    return { notFound: true };
+  }
 
   const resolved = figureService.resolveFigure(rawUid);
   if (!resolved) {
+    logger.info({ storyId, uid: rawUid }, 'scan: unrecognized tag');
     return { recognized: false, led: LED_UNKNOWN };
   }
 
   const existing = listFiguresForStoryStmt.all(storyId) as StoryFigureRow[];
   const duplicate = existing.some((f) => f.uid === resolved.uid);
   if (duplicate) {
+    logger.info({ storyId, uid: resolved.uid, figureName: resolved.name }, 'scan: duplicate figure');
     return {
       recognized: true,
       duplicate: true,
@@ -127,6 +134,10 @@ export function addFigure(storyId: string, rawUid: string): ScanResult {
   }
 
   insertFigureStmt.run(storyId, resolved.uid, resolved.name, resolved.category, new Date().toISOString());
+  logger.info(
+    { storyId, uid: resolved.uid, figureName: resolved.name, category: resolved.category },
+    'scan: figure added to story'
+  );
 
   return {
     recognized: true,
@@ -139,7 +150,9 @@ export function addFigure(storyId: string, rawUid: string): ScanResult {
 
 export function removeFigure(storyId: string, entryId: string | number): boolean {
   const result = deleteFigureStmt.run(entryId, storyId);
-  return result.changes > 0;
+  const removed = result.changes > 0;
+  logger.info({ storyId, entryId, removed }, 'figure removed from story');
+  return removed;
 }
 
 function missingRequiredCategories(figures: StoryFigureEntry[]): Category[] {
@@ -155,19 +168,29 @@ export interface GenerateResult {
 
 export async function generateStory(storyId: string): Promise<Story | GenerateResult> {
   const story = getStory(storyId);
-  if (!story) return { notFound: true };
+  if (!story) {
+    logger.warn({ storyId }, 'generate requested for unknown story');
+    return { notFound: true };
+  }
 
   const missing = missingRequiredCategories(story.figures);
   if (missing.length > 0) {
+    logger.info({ storyId, missing }, 'generate blocked: missing required categories');
     return { validationError: true, missing };
   }
+
+  const log = logger.child({ storyId, llmProvider: config.llmProvider, llmModel: config.llmModel });
+  const overallStart = Date.now();
+  log.info({ figureCount: story.figures.length }, 'generating story: starting');
 
   const recentRows = recentGeneratedStmt.all(RECENT_HISTORY_LIMIT) as { story_text: string | null }[];
   const recentHistory = recentRows.map((r) => r.story_text).filter((t): t is string => Boolean(t));
 
   const prompt = buildPrompt(story.figures, recentHistory);
   const provider = getProvider();
+  const textStart = Date.now();
   const storyText = await provider.generateStory(prompt);
+  log.info({ durationMs: Date.now() - textStart, chars: storyText.length }, 'story text generated');
 
   const generatedAt = new Date().toISOString();
   setGeneratedStmt.run(storyText, generatedAt, storyId);
@@ -179,12 +202,19 @@ export async function generateStory(storyId: string): Promise<Story | GenerateRe
   // Skipped in mock mode (llmProvider === 'mock') so tests stay offline even though a real
   // OPENAI_API_KEY may be present in the environment.
   if (config.generateImages && config.openaiApiKey && config.llmProvider !== 'mock') {
+    const imagesStart = Date.now();
     try {
       savedStory.images = await generateStoryImages(storyText, story.figures);
+      log.info(
+        { durationMs: Date.now() - imagesStart, count: savedStory.images.length },
+        'story illustrations generated'
+      );
     } catch (err) {
-      console.error('story image generation failed:', err);
+      log.error({ err, durationMs: Date.now() - imagesStart }, 'story image generation failed');
     }
   }
+
+  log.info({ totalDurationMs: Date.now() - overallStart }, 'generating story: done');
 
   return savedStory;
 }

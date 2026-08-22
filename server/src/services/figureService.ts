@@ -1,6 +1,7 @@
 import fs from 'fs';
 import config from '../config';
 import db from '../data/db';
+import logger from '../logger';
 import { normalizeUid } from '../utils/uid';
 import { Category, Figure } from '../types';
 
@@ -43,6 +44,7 @@ function seedIfEmpty(): void {
     }
   });
   insertAll();
+  logger.info({ count: Object.keys(parsed).length }, 'figures table seeded from starter deck');
 }
 
 seedIfEmpty();
@@ -73,11 +75,14 @@ export function createFigure(input: CreateFigureInput): Figure {
     description: (input.description || '').trim(),
     createdAt: new Date().toISOString(),
   });
+  logger.info({ uid, figureName: input.name, category: input.category }, 'figure enrolled');
   return resolveFigure(uid) as Figure;
 }
 
 export function deleteFigure(rawUid: string): boolean {
   const uid = normalizeUid(rawUid);
   const result = deleteStmt.run(uid);
-  return result.changes > 0;
+  const removed = result.changes > 0;
+  logger.info({ uid, removed }, 'figure deleted');
+  return removed;
 }

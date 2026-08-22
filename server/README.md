@@ -89,8 +89,16 @@ The **"דמויות" (Figures)** tab lists everything currently in the deck with
 | `IMAGE_MODEL` | `gpt-image-1.5` | ~$0.03-0.05/image at medium quality -> ~$0.10-0.15/story for the 3 illustrations |
 | `DB_PATH` | `server/data/stories.db` | |
 | `FIGURES_PATH` | `server/src/data/figures.json` | only read once, to seed the `figures` table when it's empty (fresh DB) |
+| `LOG_LEVEL` | `info` (`silent` when `LLM_PROVIDER=mock`) | `trace` \| `debug` \| `info` \| `warn` \| `error` \| `silent`. `debug` also logs LLM token usage per call |
+| `LOG_PRETTY` | `true` | `false` for raw JSON lines (e.g. if you pipe logs into something that parses JSON) instead of the human-readable format |
 
 No auth — this is designed for a closed home network only.
+
+## Logs
+
+Structured logging via [pino](https://getpino.io), wired up in `src/logger.ts`. Every request (via `pino-http`), every scan (recognized/duplicate/new/unrecognized), every figure enrollment/deletion, and every story generation is logged with context (`storyId`, `uid`, timings). `generateStory()` specifically logs the text-generation duration, the illustration-generation duration (or the failure, since images are best-effort and don't fail the request), and a total. LLM/image provider calls log duration and outcome at `info`/`error`; full token usage is at `debug`.
+
+In Portainer, this all lands in the container's stdout, so **Containers → storytime → Logs** shows it live - no extra setup needed. Locally, `docker compose logs -f` or just watch the `npm run dev` terminal.
 
 ## Illustrations
 

@@ -13,6 +13,8 @@ export interface Config {
   imageModel: string;
   dbPath: string;
   figuresPath: string;
+  logLevel: string;
+  logPretty: boolean;
 }
 
 const config: Config = {
@@ -34,6 +36,9 @@ const config: Config = {
   figuresPath: process.env.FIGURES_PATH
     ? path.resolve(process.env.FIGURES_PATH)
     : path.join(__dirname, '..', 'src', 'data', 'figures.json'),
+  // 'silent' in tests by default (LLM_PROVIDER=mock) keeps test output clean without an extra env var
+  logLevel: process.env.LOG_LEVEL || (process.env.LLM_PROVIDER === 'mock' ? 'silent' : 'info'),
+  logPretty: (process.env.LOG_PRETTY ?? 'true') === 'true',
 };
 
 export default config;

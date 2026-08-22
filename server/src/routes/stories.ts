@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import * as storyService from '../services/storyService';
+import logger from '../logger';
 
 const router = Router();
 
@@ -146,6 +147,7 @@ router.post('/stories/:id/generate', async (req: Request, res: Response) => {
     res.json(result);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
+    logger.error({ err, storyId: req.params.id }, 'story generation request failed');
     res.status(502).json({ error: 'story generation failed', detail: message });
   }
 });

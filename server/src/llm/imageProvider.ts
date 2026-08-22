@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import config from '../config';
+import logger from '../logger';
 import { StoryFigureEntry } from '../types';
 
 let client: OpenAI | null = null;
@@ -40,6 +41,7 @@ async function writeScenePrompts(storyText: string, figures: StoryFigureEntry[])
   const castLines = figures.map((f) => `- ${f.name} (${f.category})`).join('\n');
   const userContent = `Cast:\n${castLines}\n\nStory:\n${storyText}`;
 
+  const start = Date.now();
   const res = await getClient().chat.completions.create({
     model: 'gpt-4o',
     max_tokens: 700,
@@ -57,24 +59,33 @@ async function writeScenePrompts(storyText: string, figures: StoryFigureEntry[])
     .slice(0, 3);
 
   if (prompts.length !== 3) {
+    logger.error({ raw, durationMs: Date.now() - start }, 'scene prompt writer returned an unexpected number of lines');
     throw new Error(`expected 3 scene prompts, got ${prompts.length}`);
   }
+  logger.debug({ prompts, durationMs: Date.now() - start }, 'scene prompts written');
   return prompts;
 }
 
-async function generateImage(prompt: string): Promise<string> {
-  const res = await getClient().images.generate({
-    model: config.imageModel,
-    prompt,
-    size: '1024x1024',
-    quality: 'medium',
-    n: 1,
-  });
-  const b64 = res.data?.[0]?.b64_json;
-  if (!b64) {
-    throw new Error('image generation returned no data');
+async function generateImage(prompt: string, index: number): Promise<string> {
+  const start = Date.now();
+  try {
+    const res = await getClient().images.generate({
+      model: config.imageModel,
+      prompt,
+      size: '1024x1024',
+      quality: 'medium',
+      n: 1,
+    });
+    const b64 = res.data?.[0]?.b64_json;
+    if (!b64) {
+      throw new Error('image generation returned no data');
+    }
+    logger.debug({ index, model: config.imageModel, durationMs: Date.now() - start }, 'illustration generated');
+    return `data:image/png;base64,${b64}`;
+  } catch (err) {
+    logger.error({ err, index, model: config.imageModel, durationMs: Date.now() - start }, 'illustration generation failed');
+    throw err;
   }
-  return `data:image/png;base64,${b64}`;
 }
 
 export async function generateStoryImages(
@@ -82,5 +93,5 @@ export async function generateStoryImages(
   figures: StoryFigureEntry[]
 ): Promise<string[]> {
   const scenePrompts = await writeScenePrompts(storyText, figures);
-  return Promise.all(scenePrompts.map((prompt) => generateImage(prompt)));
+  return Promise.all(scenePrompts.map((prompt, index) => generateImage(prompt, index)));
 }
