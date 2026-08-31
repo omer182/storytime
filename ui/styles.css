@@ -1,19 +1,18 @@
 :root {
-  /* dark, warm palette - reading a bedtime story in a dim room, lit like the inside of
-     a lantern-lit tent: deep brown/night tones with gold and soft green accents */
-  --outer-bg-1: #140d09;
-  --outer-bg-2: #1a110c;
+  /* dark, cool-toned night palette - reading a bedtime story in a dim room */
+  --outer-bg-1: #0a0908;
+  --outer-bg-2: #14181a;
 
-  --bg: #241a15;
-  --surface: #322419;
-  --surface-sunken: #180f0a;
-  --ink: #f2e6d3;
-  --muted: #b3a189;
-  --border: #4a3826;
+  --bg: #22333b;
+  --surface: #2c4048;
+  --surface-sunken: #182228;
+  --ink: #eae0d5;
+  --muted: #c6ac8f;
+  --border: rgba(198, 172, 143, 0.25);
 
   --primary: #5a3b72;
   --primary-ink: #fffaf0;
-  --primary-soft: rgba(90, 59, 114, 0.22);
+  --primary-soft: rgba(90, 59, 114, 0.24);
 
   --gold: #d4a24a;
   --gold-soft: rgba(212, 162, 74, 0.16);
@@ -110,30 +109,31 @@ body {
   margin: 0;
   font-family: var(--font-display);
   font-weight: 400;
-  font-size: 1.5rem;
+  font-size: 2.1rem;
   letter-spacing: 0.01em;
   color: var(--ink);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .title-spark {
   color: var(--gold);
-  font-size: 0.9rem;
+  font-size: 1.2rem;
 }
 
 .title-flourish {
   display: block;
-  width: 130px;
-  height: 10px;
-  margin: 4px auto 0;
+  width: 160px;
+  height: 12px;
+  margin: 6px auto 0;
   color: var(--gold);
   opacity: 0.7;
 }
 
 main {
+  position: relative;
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
@@ -162,49 +162,54 @@ main h2 {
   letter-spacing: 0.01em;
 }
 
-/* empty state */
+/* empty state - absolutely positioned to fill main's box exactly, so the hero image
+   below can flex-grow into the real remaining space and touch the bottom nav */
 .empty-state {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
   gap: 6px;
-  padding: 12dvh 20px 20px;
+  padding: 12dvh 20px 0;
   color: var(--muted);
 }
 
 .empty-glyph {
   position: relative;
-  width: 88px;
-  height: 88px;
+  width: 128px;
+  height: 128px;
   border-radius: 50%;
-  background: radial-gradient(circle, var(--primary-soft), var(--gold-soft));
-  color: var(--primary);
+  background: radial-gradient(circle, var(--gold-soft), var(--primary-soft));
+  color: var(--gold);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 6px;
-  box-shadow: 0 0 0 4px var(--surface), 0 4px 18px rgba(61, 43, 31, 0.15);
+  margin-bottom: 8px;
+  box-shadow: 0 0 0 4px var(--surface), 0 0 34px var(--gold-line), 0 6px 22px rgba(0, 0, 0, 0.35);
   animation: glyph-float 3.6s ease-in-out infinite;
 }
 
 @keyframes glyph-float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-5px); }
+  0%, 100% { transform: translateY(0) rotate(-4deg); }
+  50% { transform: translateY(-10px) rotate(4deg); }
 }
 
-.empty-glyph svg { width: 42px; height: 42px; }
+.empty-glyph svg { width: 62px; height: 62px; }
 
 .sparkle {
   position: absolute;
   color: var(--gold);
-  font-size: 0.95rem;
+  font-size: 1.2rem;
   animation: sparkle-twinkle 2.4s ease-in-out infinite;
 }
 
-.sparkle-1 { top: -6px; right: 4px; animation-delay: 0s; }
-.sparkle-2 { bottom: 2px; left: -10px; font-size: 0.7rem; animation-delay: 0.7s; }
-.sparkle-3 { top: 28px; right: -14px; font-size: 0.65rem; animation-delay: 1.4s; }
+.sparkle-1 { top: -10px; right: 6px; animation-delay: 0s; }
+.sparkle-2 { bottom: 2px; left: -16px; font-size: 0.9rem; animation-delay: 0.7s; }
+.sparkle-3 { top: 44px; right: -22px; font-size: 0.8rem; animation-delay: 1.4s; }
 
 @keyframes sparkle-twinkle {
   0%, 100% { opacity: 0.3; transform: scale(0.8); }
@@ -225,18 +230,21 @@ main h2 {
 }
 
 .empty-hero {
+  flex: 1 1 0;
   align-self: stretch;
-  margin-top: 22px;
-  /* no card frame - the photo itself fades into the page on all sides */
-  -webkit-mask-image: radial-gradient(ellipse 80% 75% at center, black 50%, transparent 100%);
-  mask-image: radial-gradient(ellipse 80% 75% at center, black 50%, transparent 100%);
+  min-height: 100px;
+  /* bleed past .empty-state's own side padding (20px) and main's padding (18px sides,
+     10px bottom) so the photo touches the screen edges and the bottom nav */
+  margin: 14px -38px 7px;
+  /* only the top edge fades into the page - sides and bottom are true cut edges */
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, black 70px);
+  mask-image: linear-gradient(to bottom, transparent 0, black 70px);
 }
 
 .empty-hero img {
   display: block;
   width: 100%;
-  height: auto;
-  max-height: 40dvh;
+  height: 100%;
   object-fit: cover;
 }
 
@@ -604,7 +612,7 @@ button.text-btn {
   gap: 5px;
   font-size: 0.75rem;
   color: var(--muted);
-  margin-bottom: 5px;
+  margin-bottom: 10px;
 }
 
 .deck-group-label::before {
@@ -627,9 +635,20 @@ button.text-btn {
   padding-bottom: 2px;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
+  cursor: grab;
 }
 
 .deck-row::-webkit-scrollbar { display: none; }
+
+.deck-row.dragging {
+  cursor: grabbing;
+  scroll-snap-type: none;
+  user-select: none;
+}
+
+.deck-row.dragging .token-btn {
+  pointer-events: none;
+}
 
 .token-btn {
   flex: 0 0 auto;
@@ -646,7 +665,7 @@ button.text-btn {
   .token-btn:hover {
     border-color: var(--gold);
     transform: translateY(-2px);
-    box-shadow: 0 4px 14px rgba(61, 43, 31, 0.18);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
   }
 }
 
@@ -884,7 +903,7 @@ button.text-btn {
 .loading-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(10, 6, 4, 0.55);
+  background: rgba(4, 6, 7, 0.55);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -966,7 +985,7 @@ button.text-btn {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(26, 18, 12, 0.6);
+  background: rgba(4, 6, 7, 0.6);
   display: flex;
   align-items: flex-end;
   justify-content: center;

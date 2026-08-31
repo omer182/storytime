@@ -187,6 +187,45 @@ function renderStory(): void {
   }
 }
 
+const DRAG_THRESHOLD = 5; // px of pointer movement before a mouse drag counts as scrolling, not a click
+
+function enableDragScroll(row: HTMLElement): void {
+  let startX = 0;
+  let startScrollLeft = 0;
+  let dragging = false;
+
+  // move/up listen on window (not the row, and no setPointerCapture) so the drag keeps
+  // tracking even if the cursor leaves the row - setPointerCapture on a scrollable element
+  // combined with programmatic scrollLeft writes causes some browsers to snap the scroll
+  // position back to where it started once the pointer is released
+  function onMove(event: PointerEvent): void {
+    const dx = event.clientX - startX;
+    if (!dragging && Math.abs(dx) > DRAG_THRESHOLD) {
+      dragging = true;
+      row.classList.add('dragging');
+    }
+    // RTL page: this element's scrollLeft runs 0 (start) to -(scrollWidth-clientWidth) (end),
+    // the opposite sign convention from LTR - so it's "+dx", not "-dx"
+    if (dragging) row.scrollLeft = startScrollLeft + dx;
+  }
+
+  function onUp(): void {
+    window.removeEventListener('pointermove', onMove);
+    window.removeEventListener('pointerup', onUp);
+    row.classList.remove('dragging');
+    dragging = false;
+  }
+
+  row.addEventListener('pointerdown', (event) => {
+    if (event.pointerType !== 'mouse') return; // touch/pen already scroll natively
+    startX = event.clientX;
+    startScrollLeft = row.scrollLeft;
+    dragging = false;
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+  });
+}
+
 function renderDeck(): void {
   el.deck.innerHTML = '';
   const groups: Partial<Record<Category, Figure[]>> = {};
@@ -215,6 +254,7 @@ function renderDeck(): void {
       btn.addEventListener('click', () => scanFigure(figure.uid));
       row.appendChild(btn);
     });
+    enableDragScroll(row);
     group.appendChild(row);
 
     el.deck.appendChild(group);
@@ -506,6 +546,17 @@ async function loadVersion(): Promise<void> {
     // purely cosmetic - fine to leave blank if this fails
   }
 }
+
+function syncEmptyStateHeight(): void {
+  // percentage/inset height on #no-story doesn't reliably resolve against main's
+  // flex-computed height in every browser (main has overflow-y:auto + a flex-derived
+  // height, not an explicit one) - an explicit pixel height always works, so set it directly
+  const main = document.querySelector('main') as HTMLElement;
+  el.noStory.style.height = `${main.clientHeight}px`;
+}
+
+window.addEventListener('resize', syncEmptyStateHeight);
+syncEmptyStateHeight();
 
 loadDeck();
 loadVersion();
