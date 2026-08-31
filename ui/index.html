@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<meta name="theme-color" content="#3d2b1f" />
+<meta name="theme-color" content="#140d09" />
 <title>זמן סיפור</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -35,6 +35,10 @@
           <p class="empty-title">אין סיפור פעיל כרגע</p>
           <p class="empty-sub">התחילו סיפור חדש והזמינו את הדמויות שלכם להרפתקה</p>
           <button id="btn-new-story" class="primary large">✦ התחל סיפור חדש ✦</button>
+
+          <div class="empty-hero" aria-hidden="true">
+            <img src="hero-reading.jpg" alt="" />
+          </div>
         </div>
 
         <div id="active-story" class="hidden">
@@ -64,17 +68,19 @@
           <div id="deck-section">
             <div id="story-options" class="story-options">
               <div class="option-row">
-                <span class="option-label">אורך הסיפור: <strong id="length-value">בינוני</strong></span>
-                <input type="range" id="length-slider" class="length-slider" min="0" max="2" step="1" value="1" aria-label="אורך הסיפור" autocomplete="off" />
-                <div class="slider-ticks" aria-hidden="true">
-                  <span>קצר</span>
-                  <span>בינוני</span>
-                  <span>ארוך</span>
+                <span class="option-label">אורך הסיפור</span>
+                <div id="length-segmented" class="segmented" role="radiogroup" aria-label="אורך הסיפור">
+                  <button type="button" class="segmented-btn" data-length="short">קצר</button>
+                  <button type="button" class="segmented-btn active" data-length="medium">בינוני</button>
+                  <button type="button" class="segmented-btn" data-length="long">ארוך</button>
                 </div>
               </div>
               <label class="option-row option-toggle">
                 <span class="option-label">כלול איורים <span class="title-spark" aria-hidden="true">✦</span></span>
-                <input type="checkbox" id="include-images" autocomplete="off" />
+                <span class="switch">
+                  <input type="checkbox" id="include-images" autocomplete="off" />
+                  <span class="switch-track" aria-hidden="true"></span>
+                </span>
               </label>
             </div>
 

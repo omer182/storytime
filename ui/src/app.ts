@@ -17,12 +17,7 @@ const STATUS_LABELS: Record<string, string> = {
   generated: 'הסיפור מוכן',
 };
 
-const LENGTH_STEPS: StoryLength[] = ['short', 'medium', 'long'];
-const LENGTH_LABELS: Record<StoryLength, string> = {
-  short: 'קצר',
-  medium: 'בינוני',
-  long: 'ארוך',
-};
+let selectedLength: StoryLength = 'medium';
 
 class ApiError extends Error {
   status: number;
@@ -73,8 +68,7 @@ const el = {
   newFigureName: byId<HTMLInputElement>('new-figure-name'),
   newFigureDescription: byId<HTMLTextAreaElement>('new-figure-description'),
   btnCancelNewFigure: byId<HTMLButtonElement>('btn-cancel-new-figure'),
-  lengthSlider: byId<HTMLInputElement>('length-slider'),
-  lengthValue: byId<HTMLElement>('length-value'),
+  lengthSegmented: byId<HTMLElement>('length-segmented'),
   includeImages: byId<HTMLInputElement>('include-images'),
   appShell: document.querySelector('.app-shell') as HTMLElement,
   loadingOverlay: byId<HTMLElement>('loading-overlay'),
@@ -391,14 +385,17 @@ function hideLoadingOverlay(): void {
   el.appShell.classList.remove('blurred');
 }
 
-function updateLengthLabel(): void {
-  const length = LENGTH_STEPS[Number(el.lengthSlider.value)];
-  el.lengthValue.textContent = LENGTH_LABELS[length];
+function selectLength(button: HTMLButtonElement): void {
+  el.lengthSegmented.querySelectorAll<HTMLButtonElement>('.segmented-btn').forEach((btn) => {
+    btn.classList.remove('active');
+  });
+  button.classList.add('active');
+  selectedLength = button.dataset.length as StoryLength;
 }
 
 async function generateStory(): Promise<void> {
   if (!currentStory) return;
-  const length = LENGTH_STEPS[Number(el.lengthSlider.value)];
+  const length = selectedLength;
   const generateImages = el.includeImages.checked;
 
   el.btnGenerate.disabled = true;
@@ -497,7 +494,9 @@ el.btnCancelNewFigure.addEventListener('click', closeNewFigureModal);
 el.newFigureModal.addEventListener('click', (event) => {
   if (event.target === el.newFigureModal) closeNewFigureModal();
 });
-el.lengthSlider.addEventListener('input', updateLengthLabel);
+el.lengthSegmented.querySelectorAll<HTMLButtonElement>('.segmented-btn').forEach((btn) => {
+  btn.addEventListener('click', () => selectLength(btn));
+});
 
 async function loadVersion(): Promise<void> {
   try {
