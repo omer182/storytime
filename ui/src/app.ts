@@ -206,9 +206,8 @@ function enableDragScroll(row: HTMLElement): void {
       dragging = true;
       row.classList.add('dragging');
     }
-    // RTL page: this element's scrollLeft runs 0 (start) to -(scrollWidth-clientWidth) (end),
-    // the opposite sign convention from LTR - so it's "+dx", not "-dx"
-    if (dragging) row.scrollLeft = startScrollLeft + dx;
+    // content should follow the cursor (grab-and-drag), so scrollLeft moves opposite dx
+    if (dragging) row.scrollLeft = startScrollLeft - dx;
   }
 
   function onUp(): void {

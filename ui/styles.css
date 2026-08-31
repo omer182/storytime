@@ -205,7 +205,26 @@ main h2 {
   50% { transform: translateY(-10px) rotate(4deg); }
 }
 
-.empty-glyph svg { width: 84px; height: 84px; }
+.glyph-icon {
+  position: absolute;
+  width: 118px;
+  height: 118px;
+  opacity: 0;
+  animation: glyph-icon-cycle 9.6s ease-in-out infinite;
+}
+
+.glyph-icon:nth-of-type(1) { animation-delay: 0s; }
+.glyph-icon:nth-of-type(2) { animation-delay: 2.4s; }
+.glyph-icon:nth-of-type(3) { animation-delay: 4.8s; }
+.glyph-icon:nth-of-type(4) { animation-delay: 7.2s; }
+
+@keyframes glyph-icon-cycle {
+  0% { opacity: 0; transform: scale(0.8) rotate(-6deg); }
+  5% { opacity: 1; transform: scale(1) rotate(0deg); }
+  20% { opacity: 1; transform: scale(1) rotate(0deg); }
+  25% { opacity: 0; transform: scale(0.8) rotate(6deg); }
+  100% { opacity: 0; }
+}
 
 .sparkle {
   position: absolute;
@@ -293,8 +312,6 @@ button.primary {
   button.primary:not(:disabled):hover {
     background: linear-gradient(180deg, #7d5899, var(--primary));
     border-color: #2f1f3d;
-    transform: translateY(-1px);
-    box-shadow: 0 3px 0 #2f1f3d, 0 6px 14px rgba(47, 31, 61, 0.55);
   }
 }
 
@@ -474,13 +491,12 @@ button.text-btn {
   color: var(--danger);
   font-size: 0.8rem;
   line-height: 1;
-  transition: background 0.15s ease, transform 0.15s ease;
+  transition: background 0.15s ease;
 }
 
 @media (hover: hover) {
   .figure-list button:hover {
     background: rgba(163, 67, 47, 0.12);
-    transform: scale(1.1);
   }
 }
 
@@ -673,7 +689,6 @@ button.text-btn {
 @media (hover: hover) {
   .token-btn:hover {
     border-color: var(--gold);
-    transform: translateY(-2px);
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
   }
 }
@@ -1114,13 +1129,12 @@ button.text-btn {
 }
 
 .manage-item button {
-  transition: background 0.15s ease, transform 0.15s ease;
+  transition: background 0.15s ease;
 }
 
 @media (hover: hover) {
   .manage-item button:hover {
     background: rgba(163, 67, 47, 0.12);
-    transform: scale(1.1);
   }
 }
 
