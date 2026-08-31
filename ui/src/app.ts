@@ -79,6 +79,7 @@ const el = {
   appShell: document.querySelector('.app-shell') as HTMLElement,
   loadingOverlay: byId<HTMLElement>('loading-overlay'),
   loadingMessage: byId<HTMLElement>('loading-message'),
+  appVersion: byId<HTMLElement>('app-version'),
 };
 
 let toastTimer: ReturnType<typeof setTimeout> | undefined;
@@ -498,5 +499,15 @@ el.newFigureModal.addEventListener('click', (event) => {
 });
 el.lengthSlider.addEventListener('input', updateLengthLabel);
 
+async function loadVersion(): Promise<void> {
+  try {
+    const health = await api<{ status: string; version?: string }>('/health');
+    if (health.version) el.appVersion.textContent = `v${health.version}`;
+  } catch {
+    // purely cosmetic - fine to leave blank if this fails
+  }
+}
+
 loadDeck();
+loadVersion();
 renderStory();

@@ -8,7 +8,8 @@ test.after(() => cleanup());
 test('GET /api/health returns ok', async () => {
   const res = await request(app).get('/api/health');
   assert.equal(res.status, 200);
-  assert.deepEqual(res.body, { status: 'ok' });
+  assert.equal(res.body.status, 'ok');
+  assert.equal(typeof res.body.version, 'string');
 });
 
 test('GET /api/figures returns the seed deck with the required categories present', async () => {

@@ -76,6 +76,7 @@ body {
 
 /* fixed app-shell: header + nav/CTA always on screen, only the middle scrolls if it must */
 .app-shell {
+  position: relative;
   height: 100dvh;
   display: flex;
   flex-direction: column;
@@ -83,6 +84,17 @@ body {
   background:
     radial-gradient(rgba(61, 43, 31, 0.05) 0.5px, transparent 0.5px) 0 0 / 14px 14px,
     var(--bg);
+}
+
+.app-version {
+  position: absolute;
+  bottom: max(env(safe-area-inset-bottom, 0px), 4px);
+  left: 10px;
+  font-size: 0.65rem;
+  color: var(--muted);
+  opacity: 0.55;
+  pointer-events: none;
+  z-index: 5;
 }
 
 .topbar {
