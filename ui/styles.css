@@ -339,6 +339,42 @@ button.loading .btn-spinner {
   display: inline-block;
 }
 
+.btn-icon {
+  font-size: 1.2em;
+  line-height: 1;
+}
+
+button.loading .btn-icon {
+  display: none;
+}
+
+#btn-generate {
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 2px 0 #2f1f3d, 0 4px 10px rgba(47, 31, 61, 0.5), 0 0 22px rgba(212, 162, 74, 0.3);
+}
+
+#btn-generate:disabled {
+  box-shadow: none;
+}
+
+#btn-generate:not(:disabled)::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -60%;
+  width: 45%;
+  background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: btn-shimmer 3.6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes btn-shimmer {
+  0%, 15% { left: -60%; }
+  55%, 100% { left: 130%; }
+}
+
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
@@ -553,7 +589,8 @@ button.text-btn {
 .option-toggle {
   flex-direction: row;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 10px;
   cursor: pointer;
 }
 
@@ -886,6 +923,11 @@ button.text-btn {
 .nav-btn span {
   font-size: 0.7rem;
   font-family: var(--font-ui);
+}
+
+.nav-btn .nav-emoji {
+  font-size: 20px;
+  line-height: 1;
 }
 
 .toast {

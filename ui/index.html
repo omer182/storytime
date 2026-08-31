@@ -36,7 +36,6 @@
             <span class="glyph-icon" style="animation-delay: 14.4s">🦕</span>
             <span class="glyph-icon" style="animation-delay: 16.8s">👸</span>
           </div>
-          <p class="empty-title">אין סיפור פעיל כרגע</p>
           <p class="empty-sub">התחילו סיפור חדש והזמינו את הדמויות שלכם להרפתקה</p>
           <button id="btn-new-story" class="primary large">✦ התחל סיפור חדש ✦</button>
 
@@ -48,7 +47,6 @@
         <div id="active-story" class="hidden">
           <div class="status-row">
             <span id="story-status" class="badge"></span>
-            <span id="story-id" class="muted"></span>
           </div>
 
           <div id="gate-progress" class="gate-progress">
@@ -110,15 +108,14 @@
     <div id="generate-bar" class="generate-bar hidden">
       <button id="btn-generate" class="primary large" disabled>
         <span class="btn-spinner" aria-hidden="true"></span>
+        <span class="btn-icon" aria-hidden="true">📖</span>
         <span id="btn-generate-label">צור סיפור</span>
       </button>
     </div>
 
     <nav class="bottom-nav" role="tablist" aria-label="ניווט ראשי">
       <button id="nav-create" class="nav-btn active" data-tab="create" role="tab" aria-selected="true" aria-controls="tab-create">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true">
-          <path d="M12 5c-2-1.5-5-2-7.5-1v13c2.5-1 5.5-.5 7.5 1 2-1.5 5-2 7.5-1V4c-2.5-1-5.5-.5-7.5 1Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
-        </svg>
+        <span class="nav-emoji" aria-hidden="true">📖</span>
         <span>סיפור</span>
       </button>
       <button id="nav-history" class="nav-btn" data-tab="history" role="tab" aria-selected="false" aria-controls="tab-history">

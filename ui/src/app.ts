@@ -43,7 +43,6 @@ const el = {
   noStory: byId<HTMLElement>('no-story'),
   activeStory: byId<HTMLElement>('active-story'),
   storyStatus: byId<HTMLElement>('story-status'),
-  storyId: byId<HTMLElement>('story-id'),
   gateProgress: byId<HTMLElement>('gate-progress'),
   addedFigures: byId<HTMLUListElement>('added-figures'),
   generatedWrap: byId<HTMLElement>('generated-story-wrap'),
@@ -150,7 +149,6 @@ function renderStory(): void {
 
   el.storyStatus.textContent = STATUS_LABELS[currentStory.status] || currentStory.status;
   el.storyStatus.className = 'badge' + (isGenerated ? ' generated' : '');
-  el.storyId.textContent = currentStory.id.slice(0, 8);
 
   const present = new Set(currentStory.figures.map((f) => f.category));
   el.gateProgress.querySelectorAll<HTMLElement>('.gate-pill').forEach((pill) => {
