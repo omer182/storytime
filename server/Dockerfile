@@ -37,6 +37,7 @@ COPY server/src/data ./src/data
 
 COPY ui/index.html /app/ui/index.html
 COPY ui/styles.css /app/ui/styles.css
+COPY ui/hero-reading.jpg /app/ui/hero-reading.jpg
 COPY --from=ui-build /app/ui/app.js /app/ui/app.js
 COPY --from=ui-build /app/ui/app.js.map /app/ui/app.js.map
 
