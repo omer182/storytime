@@ -20,6 +20,7 @@ export interface StoryFigureEntry {
 export interface Story {
   id: string;
   status: StoryStatus;
+  title: string | null;
   storyText: string | null;
   createdAt: string;
   generatedAt: string | null;
@@ -31,6 +32,7 @@ export interface Story {
 export interface StorySummary {
   id: string;
   status: StoryStatus;
+  title: string | null;
   createdAt: string;
   generatedAt: string | null;
   figureCount: number;

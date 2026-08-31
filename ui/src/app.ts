@@ -52,6 +52,7 @@ const el = {
   gateProgress: byId<HTMLElement>('gate-progress'),
   addedFigures: byId<HTMLUListElement>('added-figures'),
   generatedWrap: byId<HTMLElement>('generated-story-wrap'),
+  generatedStoryTitle: byId<HTMLElement>('generated-story-title'),
   generatedStory: byId<HTMLElement>('generated-story'),
   deckSection: byId<HTMLElement>('deck-section'),
   deck: byId<HTMLElement>('deck'),
@@ -106,7 +107,8 @@ function missingCategories(figures: { category: Category }[]): Category[] {
   return REQUIRED_CATEGORIES.filter((cat) => !present.has(cat));
 }
 
-function renderGeneratedStory(storyText: string, images?: string[]): void {
+function renderGeneratedStory(storyText: string, title: string | null, images?: string[]): void {
+  el.generatedStoryTitle.textContent = title || '';
   el.generatedStory.innerHTML = '';
 
   const addImage = (src: string, alt: string) => {
@@ -178,7 +180,7 @@ function renderStory(): void {
   });
 
   if (isGenerated && currentStory.storyText) {
-    renderGeneratedStory(currentStory.storyText, currentStory.images);
+    renderGeneratedStory(currentStory.storyText, currentStory.title, currentStory.images);
     el.generatedWrap.classList.remove('hidden');
     el.deckSection.classList.add('hidden');
     el.generateBar.classList.add('hidden');
@@ -441,8 +443,9 @@ async function loadHistory(): Promise<void> {
     div.className = 'history-item';
     const date = new Date(s.createdAt).toLocaleString('he-IL');
     const statusLabel = STATUS_LABELS[s.status] || s.status;
+    const heading = s.title || `${statusLabel} · ${s.figureCount} דמויות`;
     div.innerHTML = `
-      <h3>${statusLabel} · ${s.figureCount} דמויות</h3>
+      <h3>${heading}</h3>
       <div class="muted">${date}</div>
       ${s.snippet ? `<p class="muted">${s.snippet}…</p>` : ''}
     `;

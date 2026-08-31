@@ -14,6 +14,7 @@ const RECENT_HISTORY_LIMIT = 3;
 interface StoryRow {
   id: string;
   status: StoryStatus;
+  title: string | null;
   story_text: string | null;
   created_at: string;
   generated_at: string | null;
@@ -41,7 +42,7 @@ const listFiguresForStoryStmt = db.prepare(
 );
 const deleteFigureStmt = db.prepare('DELETE FROM story_figures WHERE id = ? AND story_id = ?');
 const setGeneratedStmt = db.prepare(
-  "UPDATE stories SET status = 'generated', story_text = ?, generated_at = ? WHERE id = ?"
+  "UPDATE stories SET status = 'generated', story_text = ?, title = ?, generated_at = ? WHERE id = ?"
 );
 const recentGeneratedStmt = db.prepare(
   "SELECT story_text FROM stories WHERE status = 'generated' ORDER BY generated_at DESC LIMIT ?"
@@ -51,6 +52,7 @@ function rowToStory(row: StoryRow, figures: StoryFigureRow[]): Story {
   return {
     id: row.id,
     status: row.status,
+    title: row.title,
     storyText: row.story_text,
     createdAt: row.created_at,
     generatedAt: row.generated_at,
@@ -86,6 +88,7 @@ export function listStories(): StorySummary[] {
     return {
       id: story.id,
       status: story.status,
+      title: story.title,
       createdAt: story.createdAt,
       generatedAt: story.generatedAt,
       figureCount: story.figures.length,
@@ -155,6 +158,22 @@ export function removeFigure(storyId: string, entryId: string | number): boolean
   return removed;
 }
 
+// the LLM is asked to put a short title on the first line, a blank line, then the story body.
+// Falls back to no title (whole response as body) if that shape isn't there - a model
+// occasionally ignores the instruction, and a wrongly-split title would corrupt the story text.
+function splitTitleAndBody(raw: string): { title: string | null; body: string } {
+  const trimmed = raw.trim();
+  const firstBreak = trimmed.indexOf('\n');
+  if (firstBreak === -1) return { title: null, body: trimmed };
+
+  const firstLine = trimmed.slice(0, firstBreak).trim();
+  const rest = trimmed.slice(firstBreak + 1).trim();
+  if (!firstLine || firstLine.length > 60 || !rest) {
+    return { title: null, body: trimmed };
+  }
+  return { title: firstLine, body: rest };
+}
+
 function missingRequiredCategories(figures: StoryFigureEntry[]): Category[] {
   const present = new Set(figures.map((f) => f.category));
   return REQUIRED_CATEGORIES.filter((cat) => !present.has(cat));
@@ -200,11 +219,12 @@ export async function generateStory(
   const prompt = buildPrompt(story.figures, recentHistory, length);
   const provider = getProvider();
   const textStart = Date.now();
-  const storyText = await provider.generateStory(prompt);
-  log.info({ durationMs: Date.now() - textStart, chars: storyText.length }, 'story text generated');
+  const rawText = await provider.generateStory(prompt);
+  const { title, body: storyText } = splitTitleAndBody(rawText);
+  log.info({ durationMs: Date.now() - textStart, chars: storyText.length, title }, 'story text generated');
 
   const generatedAt = new Date().toISOString();
-  setGeneratedStmt.run(storyText, generatedAt, storyId);
+  setGeneratedStmt.run(storyText, title, generatedAt, storyId);
 
   const savedStory = getStory(storyId) as Story;
 

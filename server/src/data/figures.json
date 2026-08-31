@@ -14,6 +14,11 @@
   "PLACEHOLDER-LOC-02": { "name": "טירה על העננים", "category": "location", "description": "טירה שצפה גבוה בשמיים בין העננים הרכים" },
   "PLACEHOLDER-LOC-03": { "name": "חוף ים נוצץ", "category": "location", "description": "חוף עם חול נוצץ וגלים שקטים" },
   "PLACEHOLDER-LOC-04": { "name": "כפר קטן", "category": "location", "description": "כפר חמים עם בתים צבעוניים וגינות פורחות" },
+  "PLACEHOLDER-LOC-05": { "name": "מערת גבישים זוהרת", "category": "location", "description": "מערה מסתורית מלאה גבישים שזוהרים בכל צבעי הקשת" },
+  "PLACEHOLDER-LOC-06": { "name": "ממלכת קרח נוצצת", "category": "location", "description": "ממלכה קפואה עם ארמונות קרח ונתיבי החלקה נוצצים" },
+  "PLACEHOLDER-LOC-07": { "name": "יער הפיות הזוהר", "category": "location", "description": "יער קסום שמתעורר לחיים בלילה עם אורות פיות רוקדים" },
+  "PLACEHOLDER-LOC-08": { "name": "עיר תת-ימית קסומה", "category": "location", "description": "עיר מתחת לגלים עם ארמונות אלמוגים ודגים צבעוניים" },
+  "PLACEHOLDER-LOC-09": { "name": "הר הקשת המתגלגלת", "category": "location", "description": "הר קסום שממנו זורם מפל בצבעי הקשת אל עמק פורח" },
 
   "PLACEHOLDER-MOOD-01": { "name": "שמחה", "category": "mood", "description": "תחושת שמחה גדולה ואור בלב" },
   "PLACEHOLDER-MOOD-02": { "name": "הרפתקנות", "category": "mood", "description": "רצון לצאת ולגלות דברים חדשים" },

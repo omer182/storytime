@@ -621,6 +621,19 @@ button.text-btn {
   pointer-events: none;
 }
 
+.story-title {
+  margin: 0 0 4px;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.35rem;
+  text-align: center;
+  color: var(--ink);
+}
+
+.story-title:empty {
+  display: none;
+}
+
 .story-ornament {
   text-align: center;
   color: var(--gold);

@@ -39,4 +39,12 @@ db.exec(`
   );
 `);
 
+// migration: `title` was added after the `stories` table already existed in deployed dbs -
+// CREATE TABLE IF NOT EXISTS above doesn't alter a table that's already there
+try {
+  db.exec('ALTER TABLE stories ADD COLUMN title TEXT');
+} catch {
+  // column already exists
+}
+
 export default db;
