@@ -144,6 +144,13 @@ main {
   margin: 0 auto;
 }
 
+/* the empty-state hero is sized to fill main exactly - no scrolling should ever be
+   possible there, so disable it outright as a backstop against any residual sub-pixel
+   overflow instead of chasing pixel-perfect alignment */
+main.no-scroll {
+  overflow: hidden;
+}
+
 .tab-panel { display: none; }
 .tab-panel.active {
   display: block;
@@ -180,8 +187,8 @@ main h2 {
 
 .empty-glyph {
   position: relative;
-  width: 128px;
-  height: 128px;
+  width: 168px;
+  height: 168px;
   border-radius: 50%;
   background: radial-gradient(circle, var(--gold-soft), var(--primary-soft));
   color: var(--gold);
@@ -198,7 +205,7 @@ main h2 {
   50% { transform: translateY(-10px) rotate(4deg); }
 }
 
-.empty-glyph svg { width: 62px; height: 62px; }
+.empty-glyph svg { width: 84px; height: 84px; }
 
 .sparkle {
   position: absolute;
@@ -207,9 +214,9 @@ main h2 {
   animation: sparkle-twinkle 2.4s ease-in-out infinite;
 }
 
-.sparkle-1 { top: -10px; right: 6px; animation-delay: 0s; }
-.sparkle-2 { bottom: 2px; left: -16px; font-size: 0.9rem; animation-delay: 0.7s; }
-.sparkle-3 { top: 44px; right: -22px; font-size: 0.8rem; animation-delay: 1.4s; }
+.sparkle-1 { top: -16px; right: 10px; animation-delay: 0s; }
+.sparkle-2 { bottom: 4px; left: -22px; font-size: 0.9rem; animation-delay: 0.7s; }
+.sparkle-3 { top: 58px; right: -28px; font-size: 0.8rem; animation-delay: 1.4s; }
 
 @keyframes sparkle-twinkle {
   0%, 100% { opacity: 0.3; transform: scale(0.8); }
@@ -235,7 +242,7 @@ main h2 {
   min-height: 100px;
   /* bleed past .empty-state's own side padding (20px) and main's padding (18px sides,
      10px bottom) so the photo touches the screen edges and the bottom nav */
-  margin: 14px -38px 7px;
+  margin: 14px -38px 4px;
   /* only the top edge fades into the page - sides and bottom are true cut edges */
   -webkit-mask-image: linear-gradient(to bottom, transparent 0, black 70px);
   mask-image: linear-gradient(to bottom, transparent 0, black 70px);
@@ -246,6 +253,8 @@ main h2 {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  /* keep the kids' faces in frame rather than center-cropping into the book close-up */
+  object-position: center 15%;
 }
 
 /* buttons */
