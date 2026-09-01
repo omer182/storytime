@@ -181,14 +181,15 @@ main h2 {
   align-items: center;
   text-align: center;
   gap: 6px;
-  padding: 12dvh 20px 0;
+  padding: clamp(4px, 3dvh, 28px) 20px 0;
   color: var(--muted);
 }
 
 .empty-glyph {
   position: relative;
-  width: 168px;
-  height: 168px;
+  flex: 0 0 auto;
+  width: clamp(92px, 20dvh, 168px);
+  height: clamp(92px, 20dvh, 168px);
   border-radius: 50%;
   background: radial-gradient(circle, var(--gold-soft), var(--primary-soft));
   color: var(--gold);
@@ -207,7 +208,7 @@ main h2 {
 
 .glyph-icon {
   position: absolute;
-  font-size: 88px;
+  font-size: clamp(48px, 10dvh, 88px);
   line-height: 1;
   opacity: 0;
   animation: glyph-icon-cycle 19.2s ease-in-out infinite;
