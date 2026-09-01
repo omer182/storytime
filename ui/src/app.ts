@@ -460,6 +460,7 @@ async function generateStory(): Promise<void> {
       body: JSON.stringify({ length, generateImages }),
     });
     renderStory();
+    document.querySelector('main')?.scrollTo({ top: 0 });
   } catch (err) {
     if (err instanceof ApiError && err.status === 422) {
       showToast('חסרות דמויות: ' + (err.body.missing || []).map((c) => CATEGORY_LABELS[c]).join(', '));
