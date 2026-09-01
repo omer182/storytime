@@ -349,7 +349,8 @@ button.loading .btn-icon {
   display: none;
 }
 
-#btn-generate {
+#btn-generate,
+#btn-new-story {
   position: relative;
   overflow: hidden;
   box-shadow: 0 2px 0 #2f1f3d, 0 4px 10px rgba(47, 31, 61, 0.5), 0 0 22px rgba(212, 162, 74, 0.3);
@@ -359,7 +360,8 @@ button.loading .btn-icon {
   box-shadow: none;
 }
 
-#btn-generate:not(:disabled)::after {
+#btn-generate:not(:disabled)::after,
+#btn-new-story::after {
   content: "";
   position: absolute;
   top: 0;
