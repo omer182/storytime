@@ -113,6 +113,41 @@ router.delete('/stories/:id/figures/:entryId', (req: Request, res: Response) => 
   res.status(204).send();
 });
 
+/**
+ * @openapi
+ * /api/stories/{id}/favorite:
+ *   patch:
+ *     summary: Mark or unmark a story as a favorite
+ *     tags: [Stories]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [favorite]
+ *             properties:
+ *               favorite: { type: boolean }
+ *     responses:
+ *       200: { description: Updated story }
+ *       400: { description: Invalid favorite value }
+ *       404: { description: Story not found }
+ */
+router.patch('/stories/:id/favorite', (req: Request, res: Response) => {
+  const { favorite } = req.body || {};
+  if (typeof favorite !== 'boolean') {
+    return res.status(400).json({ error: 'favorite must be a boolean' });
+  }
+  const story = storyService.setFavorite(req.params.id, favorite);
+  if (!story) return res.status(404).json({ error: 'story not found' });
+  res.json(story);
+});
+
 const VALID_LENGTHS = ['short', 'medium', 'long'];
 
 /**

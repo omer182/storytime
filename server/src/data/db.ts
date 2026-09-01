@@ -47,4 +47,10 @@ try {
   // column already exists
 }
 
+try {
+  db.exec('ALTER TABLE stories ADD COLUMN favorite INTEGER NOT NULL DEFAULT 0');
+} catch {
+  // column already exists
+}
+
 export default db;

@@ -24,6 +24,7 @@ export interface Story {
   storyText: string | null;
   createdAt: string;
   generatedAt: string | null;
+  favorite: boolean;
   figures: StoryFigureEntry[];
   // only present right after generating - never persisted, so a later GET won't have them
   images?: string[];
@@ -35,7 +36,9 @@ export interface StorySummary {
   title: string | null;
   createdAt: string;
   generatedAt: string | null;
+  favorite: boolean;
   figureCount: number;
+  figures: { name: string; category: Category }[];
   snippet: string | null;
 }
 

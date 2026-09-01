@@ -42,12 +42,14 @@ function byId<T extends HTMLElement>(id: string): T {
 const el = {
   noStory: byId<HTMLElement>('no-story'),
   activeStory: byId<HTMLElement>('active-story'),
+  statusRow: byId<HTMLElement>('status-row'),
   storyStatus: byId<HTMLElement>('story-status'),
   gateProgress: byId<HTMLElement>('gate-progress'),
   addedFigures: byId<HTMLUListElement>('added-figures'),
   generatedWrap: byId<HTMLElement>('generated-story-wrap'),
   generatedStoryTitle: byId<HTMLElement>('generated-story-title'),
   generatedStory: byId<HTMLElement>('generated-story'),
+  storyFigureTags: byId<HTMLUListElement>('story-figure-tags'),
   deckSection: byId<HTMLElement>('deck-section'),
   deck: byId<HTMLElement>('deck'),
   generateBar: byId<HTMLElement>('generate-bar'),
@@ -147,8 +149,9 @@ function renderStory(): void {
 
   const isGenerated = currentStory.status === 'generated';
 
+  el.statusRow.classList.toggle('hidden', isGenerated);
   el.storyStatus.textContent = STATUS_LABELS[currentStory.status] || currentStory.status;
-  el.storyStatus.className = 'badge' + (isGenerated ? ' generated' : '');
+  el.storyStatus.className = 'badge';
 
   const present = new Set(currentStory.figures.map((f) => f.category));
   el.gateProgress.querySelectorAll<HTMLElement>('.gate-pill').forEach((pill) => {
@@ -156,6 +159,7 @@ function renderStory(): void {
   });
   el.gateProgress.classList.toggle('hidden', isGenerated);
 
+  el.addedFigures.classList.toggle('hidden', isGenerated);
   el.addedFigures.innerHTML = '';
   currentStory.figures.forEach((f) => {
     const li = document.createElement('li');
@@ -163,14 +167,12 @@ function renderStory(): void {
     const nameSpan = document.createElement('span');
     nameSpan.textContent = f.name;
     li.appendChild(nameSpan);
-    if (!isGenerated) {
-      const removeBtn = document.createElement('button');
-      removeBtn.textContent = '✕';
-      removeBtn.title = 'הסר';
-      removeBtn.setAttribute('aria-label', `הסר את ${f.name}`);
-      removeBtn.addEventListener('click', () => removeFigure(f.entryId));
-      li.appendChild(removeBtn);
-    }
+    const removeBtn = document.createElement('button');
+    removeBtn.textContent = '✕';
+    removeBtn.title = 'הסר';
+    removeBtn.setAttribute('aria-label', `הסר את ${f.name}`);
+    removeBtn.addEventListener('click', () => removeFigure(f.entryId));
+    li.appendChild(removeBtn);
     el.addedFigures.appendChild(li);
   });
 
@@ -179,6 +181,16 @@ function renderStory(): void {
     el.generatedWrap.classList.remove('hidden');
     el.deckSection.classList.add('hidden');
     el.generateBar.classList.add('hidden');
+
+    el.storyFigureTags.innerHTML = '';
+    currentStory.figures.forEach((f) => {
+      const li = document.createElement('li');
+      li.dataset.cat = f.category;
+      const nameSpan = document.createElement('span');
+      nameSpan.textContent = f.name;
+      li.appendChild(nameSpan);
+      el.storyFigureTags.appendChild(li);
+    });
   } else {
     el.generatedWrap.classList.add('hidden');
     el.deckSection.classList.remove('hidden');
@@ -482,15 +494,52 @@ async function loadHistory(): Promise<void> {
     const statusLabel = STATUS_LABELS[s.status] || s.status;
     const heading = s.title || `${statusLabel} · ${s.figureCount} דמויות`;
     div.innerHTML = `
-      <h3>${heading}</h3>
+      <div class="history-item-head">
+        <h3>${heading}</h3>
+        <button type="button" class="favorite-btn" aria-label="סמן כמועדף">${s.favorite ? '★' : '☆'}</button>
+      </div>
       <div class="muted">${date}</div>
       ${s.snippet ? `<p class="muted">${s.snippet}…</p>` : ''}
     `;
+
+    if (s.figures.length > 0) {
+      const tagList = document.createElement('ul');
+      tagList.className = 'figure-list readonly history-tags';
+      s.figures.forEach((f) => {
+        const li = document.createElement('li');
+        li.dataset.cat = f.category;
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = f.name;
+        li.appendChild(nameSpan);
+        tagList.appendChild(li);
+      });
+      div.appendChild(tagList);
+    }
+
+    const favoriteBtn = div.querySelector<HTMLButtonElement>('.favorite-btn')!;
+    favoriteBtn.classList.toggle('active', s.favorite);
+    favoriteBtn.addEventListener('click', (event) => {
+      event.stopPropagation();
+      toggleFavorite(s.id, !s.favorite);
+    });
+
     if (s.status === 'generated') {
       div.addEventListener('click', () => toggleHistoryStory(div, s.id));
     }
     el.historyList.appendChild(div);
   });
+}
+
+async function toggleFavorite(storyId: string, favorite: boolean): Promise<void> {
+  try {
+    await api<Story>(`/stories/${storyId}/favorite`, {
+      method: 'PATCH',
+      body: JSON.stringify({ favorite }),
+    });
+    loadHistory();
+  } catch (err) {
+    showToast((err as Error).message);
+  }
 }
 
 async function toggleHistoryStory(container: HTMLElement, storyId: string): Promise<void> {

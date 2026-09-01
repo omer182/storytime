@@ -18,6 +18,7 @@ interface StoryRow {
   story_text: string | null;
   created_at: string;
   generated_at: string | null;
+  favorite: number;
 }
 
 interface StoryFigureRow {
@@ -32,8 +33,9 @@ interface StoryFigureRow {
 const insertStoryStmt = db.prepare('INSERT INTO stories (id, status, created_at) VALUES (?, ?, ?)');
 const getStoryStmt = db.prepare('SELECT * FROM stories WHERE id = ?');
 const listStoriesStmt = db.prepare(
-  "SELECT * FROM stories WHERE status = 'generated' ORDER BY generated_at DESC"
+  "SELECT * FROM stories WHERE status = 'generated' ORDER BY favorite DESC, generated_at DESC"
 );
+const setFavoriteStmt = db.prepare('UPDATE stories SET favorite = ? WHERE id = ?');
 const insertFigureStmt = db.prepare(
   'INSERT INTO story_figures (story_id, uid, name, category, added_at) VALUES (?, ?, ?, ?, ?)'
 );
@@ -56,6 +58,7 @@ function rowToStory(row: StoryRow, figures: StoryFigureRow[]): Story {
     storyText: row.story_text,
     createdAt: row.created_at,
     generatedAt: row.generated_at,
+    favorite: !!row.favorite,
     figures: figures.map((f) => ({
       uid: f.uid,
       name: f.name,
@@ -91,10 +94,19 @@ export function listStories(): StorySummary[] {
       title: story.title,
       createdAt: story.createdAt,
       generatedAt: story.generatedAt,
+      favorite: story.favorite,
       figureCount: story.figures.length,
+      figures: story.figures.map((f) => ({ name: f.name, category: f.category })),
       snippet: story.storyText ? story.storyText.slice(0, 120) : null,
     };
   });
+}
+
+export function setFavorite(storyId: string, favorite: boolean): Story | null {
+  const result = setFavoriteStmt.run(favorite ? 1 : 0, storyId);
+  if (result.changes === 0) return null;
+  logger.info({ storyId, favorite }, 'story favorite toggled');
+  return getStory(storyId);
 }
 
 const LED_UNKNOWN = 'red_wiggle';

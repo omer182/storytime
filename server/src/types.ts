@@ -25,6 +25,7 @@ export interface Story {
   storyText: string | null;
   createdAt: string;
   generatedAt: string | null;
+  favorite: boolean;
   figures: StoryFigureEntry[];
   // only present on the response to POST /stories/:id/generate - never persisted,
   // so a later GET of the same story won't have them
@@ -37,7 +38,9 @@ export interface StorySummary {
   title: string | null;
   createdAt: string;
   generatedAt: string | null;
+  favorite: boolean;
   figureCount: number;
+  figures: { name: string; category: Category }[];
   snippet: string | null;
 }
 

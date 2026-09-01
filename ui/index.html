@@ -45,7 +45,7 @@
         </div>
 
         <div id="active-story" class="hidden">
-          <div class="status-row">
+          <div id="status-row" class="status-row">
             <span id="story-status" class="badge"></span>
           </div>
 
@@ -64,6 +64,7 @@
               <div id="generated-story" class="story-text"></div>
               <div class="story-ornament story-ornament-bottom" aria-hidden="true">❧</div>
             </div>
+            <ul id="story-figure-tags" class="figure-list readonly"></ul>
             <button id="btn-restart-after" class="primary large">✦ סיפור חדש ✦</button>
           </div>
 
@@ -78,7 +79,7 @@
                 </div>
               </div>
               <label class="option-row option-toggle">
-                <span class="option-label">כלול איורים <span class="title-spark" aria-hidden="true">✦</span></span>
+                <span class="option-label">כולל תמונות <span class="title-spark" aria-hidden="true">✦</span></span>
                 <span class="switch">
                   <input type="checkbox" id="include-images" autocomplete="off" />
                   <span class="switch-track" aria-hidden="true"></span>
@@ -86,8 +87,6 @@
               </label>
             </div>
 
-            <h2>הוסף דמות</h2>
-            <p class="hint">סימולציית סריקה - לחצו על אסימון</p>
             <div id="deck"></div>
             <button id="btn-abandon" class="text-btn">בטל סיפור זה</button>
           </div>

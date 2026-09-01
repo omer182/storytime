@@ -501,6 +501,10 @@ button.text-btn {
   animation: chip-in 0.22s ease;
 }
 
+.figure-list.readonly li {
+  padding: 5px 12px;
+}
+
 @keyframes chip-in {
   from { opacity: 0; transform: scale(0.9); }
   to { opacity: 1; transform: scale(1); }
@@ -598,6 +602,8 @@ button.text-btn {
   justify-content: flex-start;
   gap: 10px;
   cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .switch {
@@ -639,12 +645,12 @@ button.text-btn {
 }
 
 .switch input:checked + .switch-track {
-  background: var(--primary-soft);
-  border-color: var(--primary);
+  background: var(--gold-soft);
+  border-color: var(--gold);
 }
 
 .switch input:checked + .switch-track::before {
-  background: var(--primary);
+  background: var(--gold);
   transform: translateX(-20px);
 }
 
@@ -853,12 +859,37 @@ button.text-btn {
   }
 }
 
+.history-item-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
 .history-item h3 {
   margin: 0 0 3px;
   font-family: var(--font-display);
   font-weight: 400;
   font-size: 1rem;
   color: var(--ink);
+}
+
+.favorite-btn {
+  flex-shrink: 0;
+  border: none;
+  background: none;
+  padding: 0 2px;
+  font-size: 1.35rem;
+  line-height: 1.1;
+  color: var(--muted);
+}
+
+.favorite-btn.active {
+  color: var(--gold);
+}
+
+.history-tags {
+  margin: 10px 0 0;
 }
 
 .history-item .story-text {
