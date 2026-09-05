@@ -96,19 +96,29 @@ function isModerationBlocked(err: unknown): boolean {
   return typeof err === 'object' && err !== null && (err as { code?: string }).code === 'moderation_blocked';
 }
 
+// The illustrations travel to the phone inline in the JSON response as base64, so encoding
+// dominates the payload: the same 1024px picture is ~2.4MB as base64 PNG and ~165KB as base64
+// WebP q75. At the size these are actually displayed (a ~355px-wide column, so ~1024px on a 3x
+// screen) the two are indistinguishable, so PNG only ever cost bandwidth.
+const IMAGE_FORMAT = 'webp';
+const IMAGE_COMPRESSION = 75;
+
 async function requestImage(prompt: string): Promise<string> {
   const res = await getClient().images.generate({
     model: config.imageModel,
     prompt,
+    // 1024x1024 is the smallest the gpt-image models offer (256/512 are dall-e-2 only)
     size: '1024x1024',
-    quality: 'medium',
+    quality: config.imageQuality,
+    output_format: IMAGE_FORMAT,
+    output_compression: IMAGE_COMPRESSION,
     n: 1,
   });
   const b64 = res.data?.[0]?.b64_json;
   if (!b64) {
     throw new Error('image generation returned no data');
   }
-  return `data:image/png;base64,${b64}`;
+  return `data:image/${IMAGE_FORMAT};base64,${b64}`;
 }
 
 const DEBRAND_SYSTEM_PROMPT = `You rewrite children's-book image prompts that an image model refused to draw.

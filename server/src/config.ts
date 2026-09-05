@@ -11,6 +11,7 @@ export interface Config {
   openaiApiKey: string;
   generateImages: boolean;
   imageModel: string;
+  imageQuality: 'low' | 'medium' | 'high';
   dbPath: string;
   figuresPath: string;
   logLevel: string;
@@ -27,6 +28,13 @@ const config: Config = {
   // Claude has no image generation - so this only takes effect when OPENAI_API_KEY is set
   generateImages: (process.env.GENERATE_IMAGES ?? 'true') === 'true',
   imageModel: process.env.IMAGE_MODEL || 'gpt-image-1.5',
+  // 'low' renders in roughly half the time and costs less per image; 'medium' keeps the flatter,
+  // softer storybook look. Anything unrecognized falls back to 'medium'.
+  imageQuality: (['low', 'medium', 'high'] as const).includes(
+    process.env.IMAGE_QUALITY as 'low' | 'medium' | 'high'
+  )
+    ? (process.env.IMAGE_QUALITY as 'low' | 'medium' | 'high')
+    : 'medium',
   // __dirname is server/src in dev (tsx runs .ts in place) and server/dist in prod
   // (tsc-compiled) - both are direct children of server/, so '..' always lands
   // back on server/ regardless of which mode is running.
