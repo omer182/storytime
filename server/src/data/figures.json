@@ -9,6 +9,11 @@
   "PLACEHOLDER-CHAR-08": { "name": "אלזה נסיכת הקרח", "category": "character", "description": "נסיכה אמיצה עם כוחות קסם של קרח ושלג, שלומדת לאהוב את מי שהיא" },
   "PLACEHOLDER-CHAR-09": { "name": "חד-קרן קסום", "category": "character", "description": "סוס קסום עם קרן נוצצת שמביא מזל טוב וקסם לכל מי שפוגש" },
   "PLACEHOLDER-CHAR-10": { "name": "גאבי הסקרנית", "category": "character", "description": "ילדה מלאת דמיון שחיה בבית בובות קסום מלא חתולים וחברים" },
+  "PLACEHOLDER-CHAR-11": { "name": "סטיץ' החייזר הכחול", "category": "character", "description": "חייזר כחול קטן ושובב עם לב זהב, שלומד על משמעות המשפחה והחברות" },
+  "PLACEHOLDER-CHAR-12": { "name": "אנג'ל החייזרית הוורודה", "category": "character", "description": "חייזרית ורודה מתוקה ושובבה, שאוהבת לשיר ולהסתבך בהרפתקאות" },
+  "PLACEHOLDER-CHAR-13": { "name": "במבי הצבי הקטן", "category": "character", "description": "צבי קטן וסקרן שלומד להכיר את היער, לעמוד על רגליו ולמצוא חברים" },
+  "PLACEHOLDER-CHAR-14": { "name": "באטמן הגיבור האמיץ", "category": "character", "description": "גיבור-על אמיץ ותושייתי שמגן על העיר ועוזר לכל מי שזקוק לעזרה" },
+  "PLACEHOLDER-CHAR-15": { "name": "האלק הענק הירוק", "category": "character", "description": "ענק ירוק וחזק בעל לב טוב, שמשתמש בכוח שלו כדי לעזור ולהגן על חברים" },
 
   "PLACEHOLDER-LOC-01": { "name": "יער קסום", "category": "location", "description": "יער ירוק ומלא אור שבו קורים דברים קסומים" },
   "PLACEHOLDER-LOC-02": { "name": "טירה על העננים", "category": "location", "description": "טירה שצפה גבוה בשמיים בין העננים הרכים" },
