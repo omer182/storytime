@@ -12,6 +12,22 @@ const CATEGORY_LABELS: Record<Category, string> = {
 
 const CATEGORY_ORDER: Category[] = ['character', 'location', 'mood', 'object'];
 
+// categories shown as an image-grid picker modal, rather than an inline row of text tokens.
+// only one location is allowed per story; character/object allow multiple.
+const PICKER_CATEGORIES: Category[] = ['character', 'location', 'object'];
+const SINGLE_SELECT_CATEGORIES: Category[] = ['location'];
+
+const CATEGORY_EMOJI: Record<Category, string> = {
+  character: '🧑',
+  location: '📍',
+  mood: '💭',
+  object: '🎒',
+};
+
+function figureImageCandidates(uid: string): string[] {
+  return [`figure-images/${uid}.jpg`, `figure-images/${uid}.png`];
+}
+
 const STATUS_LABELS: Record<string, string> = {
   collecting: 'אוסף דמויות',
   generated: 'הסיפור מוכן',
@@ -69,6 +85,12 @@ const el = {
   newFigureName: byId<HTMLInputElement>('new-figure-name'),
   newFigureDescription: byId<HTMLTextAreaElement>('new-figure-description'),
   btnCancelNewFigure: byId<HTMLButtonElement>('btn-cancel-new-figure'),
+  figurePickerModal: byId<HTMLElement>('figure-picker-modal'),
+  figurePickerModalDialog: byId<HTMLElement>('figure-picker-modal').querySelector('.modal') as HTMLElement,
+  figurePickerTitle: byId<HTMLElement>('figure-picker-title'),
+  figurePickerHint: byId<HTMLElement>('figure-picker-hint'),
+  figurePickerGrid: byId<HTMLElement>('figure-picker-grid'),
+  btnConfirmFigurePicker: byId<HTMLButtonElement>('btn-confirm-figure-picker'),
   lengthSegmented: byId<HTMLElement>('length-segmented'),
   includeImages: byId<HTMLInputElement>('include-images'),
   appShell: document.querySelector('.app-shell') as HTMLElement,
@@ -196,6 +218,7 @@ function renderStory(): void {
     el.deckSection.classList.remove('hidden');
     el.generateBar.classList.remove('hidden');
     el.btnGenerate.disabled = missingCategories(currentStory.figures).length > 0;
+    renderDeck();
   }
 }
 
@@ -255,18 +278,34 @@ function renderDeck(): void {
     label.textContent = CATEGORY_LABELS[cat] || cat;
     group.appendChild(label);
 
-    const row = document.createElement('div');
-    row.className = 'deck-row';
-    groups[cat]!.forEach((figure) => {
+    if (PICKER_CATEGORIES.includes(cat)) {
+      const selectedCount = (currentStory?.figures || []).filter((f) => f.category === cat).length;
       const btn = document.createElement('button');
-      btn.className = 'token-btn';
-      btn.textContent = figure.name;
-      btn.setAttribute('aria-label', `סרוק את ${figure.name} (${CATEGORY_LABELS[cat]})`);
-      btn.addEventListener('click', () => scanFigure(figure.uid));
-      row.appendChild(btn);
-    });
-    enableDragScroll(row);
-    group.appendChild(row);
+      btn.type = 'button';
+      btn.className = 'token-btn picker-trigger';
+      btn.innerHTML = `<span>${CATEGORY_EMOJI[cat]} בחרו ${CATEGORY_LABELS[cat]}</span>`;
+      if (selectedCount > 0) {
+        const countSpan = document.createElement('span');
+        countSpan.className = 'picker-trigger-count';
+        countSpan.textContent = `${selectedCount} נבחרו`;
+        btn.appendChild(countSpan);
+      }
+      btn.addEventListener('click', () => openFigurePickerModal(cat));
+      group.appendChild(btn);
+    } else {
+      const row = document.createElement('div');
+      row.className = 'deck-row';
+      groups[cat]!.forEach((figure) => {
+        const btn = document.createElement('button');
+        btn.className = 'token-btn';
+        btn.textContent = figure.name;
+        btn.setAttribute('aria-label', `סרוק את ${figure.name} (${CATEGORY_LABELS[cat]})`);
+        btn.addEventListener('click', () => scanFigure(figure.uid));
+        row.appendChild(btn);
+      });
+      enableDragScroll(row);
+      group.appendChild(row);
+    }
 
     el.deck.appendChild(group);
   });
@@ -383,6 +422,148 @@ async function deleteFigureFromDeck(uid: string): Promise<void> {
     await loadDeck();
   } catch (err) {
     showToast((err as Error).message);
+  }
+}
+
+let pickerCategory: Category | null = null;
+let pickerSelectedUids = new Set<string>();
+let pickerReturnFocus: HTMLElement | null = null;
+
+function openFigurePickerModal(category: Category): void {
+  if (!currentStory) return;
+  pickerCategory = category;
+  pickerSelectedUids = new Set(
+    currentStory.figures.filter((f) => f.category === category).map((f) => f.uid)
+  );
+  pickerReturnFocus = document.activeElement as HTMLElement;
+  el.figurePickerTitle.textContent = `בחרו ${CATEGORY_LABELS[category]}`;
+  el.figurePickerHint.textContent = SINGLE_SELECT_CATEGORIES.includes(category)
+    ? 'ניתן לבחור מקום אחד'
+    : 'ניתן לבחור כמה שרוצים';
+  renderFigurePickerGrid();
+  el.figurePickerModal.classList.remove('hidden');
+  document.addEventListener('keydown', onFigurePickerKeydown);
+}
+
+function closeFigurePickerModal(): void {
+  pickerCategory = null;
+  el.figurePickerModal.classList.add('hidden');
+  document.removeEventListener('keydown', onFigurePickerKeydown);
+  pickerReturnFocus?.focus();
+  pickerReturnFocus = null;
+}
+
+function onFigurePickerKeydown(event: KeyboardEvent): void {
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    closeFigurePickerModal();
+    return;
+  }
+  if (event.key !== 'Tab') return;
+  const focusable = el.figurePickerModalDialog.querySelectorAll<HTMLElement>(
+    'button, input, select, textarea, [tabindex]:not([tabindex="-1"])'
+  );
+  if (focusable.length === 0) return;
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
+}
+
+function renderFigurePickerGrid(): void {
+  if (!pickerCategory) return;
+  const category = pickerCategory;
+  el.figurePickerGrid.innerHTML = '';
+  deck
+    .filter((f) => f.category === category)
+    .forEach((figure) => {
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'figure-card';
+      card.classList.toggle('selected', pickerSelectedUids.has(figure.uid));
+
+      const thumb = document.createElement('div');
+      thumb.className = 'figure-card-thumb';
+      const img = document.createElement('img');
+      const candidates = figureImageCandidates(figure.uid);
+      let candidateIndex = 0;
+      img.alt = figure.name;
+      img.src = candidates[0];
+      img.addEventListener('error', () => {
+        candidateIndex += 1;
+        if (candidateIndex < candidates.length) {
+          img.src = candidates[candidateIndex];
+        } else {
+          thumb.innerHTML = '';
+          thumb.textContent = CATEGORY_EMOJI[category];
+        }
+      });
+      thumb.appendChild(img);
+      card.appendChild(thumb);
+
+      const check = document.createElement('span');
+      check.className = 'figure-card-check';
+      check.textContent = '✓';
+      check.setAttribute('aria-hidden', 'true');
+      card.appendChild(check);
+
+      const name = document.createElement('span');
+      name.className = 'figure-card-name';
+      name.textContent = figure.name;
+      card.appendChild(name);
+
+      card.addEventListener('click', () => {
+        if (SINGLE_SELECT_CATEGORIES.includes(category)) {
+          pickerSelectedUids.clear();
+          pickerSelectedUids.add(figure.uid);
+        } else if (pickerSelectedUids.has(figure.uid)) {
+          pickerSelectedUids.delete(figure.uid);
+        } else {
+          pickerSelectedUids.add(figure.uid);
+        }
+        renderFigurePickerGrid();
+      });
+
+      el.figurePickerGrid.appendChild(card);
+    });
+}
+
+async function confirmFigurePicker(): Promise<void> {
+  if (!pickerCategory || !currentStory) {
+    closeFigurePickerModal();
+    return;
+  }
+  const category = pickerCategory;
+  const before = new Set(
+    currentStory.figures.filter((f) => f.category === category).map((f) => f.uid)
+  );
+  const toAdd = [...pickerSelectedUids].filter((uid) => !before.has(uid));
+  const toRemove = currentStory.figures.filter((f) => f.category === category && !pickerSelectedUids.has(f.uid));
+
+  closeFigurePickerModal();
+  if (!currentStory) return;
+
+  try {
+    for (const entry of toRemove) {
+      await api(`/stories/${currentStory.id}/figures/${entry.entryId}`, { method: 'DELETE' });
+      currentStory.figures = currentStory.figures.filter((f) => f.entryId !== entry.entryId);
+    }
+    for (const uid of toAdd) {
+      const result = await api<ScanResult>(`/stories/${currentStory.id}/figures`, {
+        method: 'POST',
+        body: JSON.stringify({ uid }),
+      });
+      if (result.figures) currentStory.figures = result.figures;
+    }
+  } catch (err) {
+    showToast((err as Error).message);
+  } finally {
+    renderStory();
   }
 }
 
@@ -582,6 +763,10 @@ el.newFigureForm.addEventListener('submit', submitNewFigure);
 el.btnCancelNewFigure.addEventListener('click', closeNewFigureModal);
 el.newFigureModal.addEventListener('click', (event) => {
   if (event.target === el.newFigureModal) closeNewFigureModal();
+});
+el.btnConfirmFigurePicker.addEventListener('click', confirmFigurePicker);
+el.figurePickerModal.addEventListener('click', (event) => {
+  if (event.target === el.figurePickerModal) closeFigurePickerModal();
 });
 el.lengthSegmented.querySelectorAll<HTMLButtonElement>('.segmented-btn').forEach((btn) => {
   btn.addEventListener('click', () => selectLength(btn));
