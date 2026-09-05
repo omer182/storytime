@@ -39,5 +39,6 @@
   "PLACEHOLDER-OBJ-02": { "name": "ספר קסום", "category": "object", "description": "ספר עתיק שהסיפורים בו קמים לחיים" },
   "PLACEHOLDER-OBJ-03": { "name": "חרב אור", "category": "object", "description": "חרב קסומה שזוהרת באור בהיר ומגנה על חברים" },
   "PLACEHOLDER-OBJ-04": { "name": "כתר זהב", "category": "object", "description": "כתר נוצץ שגורם לכל מי שחובש אותו להרגיש מלכותי ואמיץ" },
-  "PLACEHOLDER-OBJ-05": { "name": "גלימת גיבורים", "category": "object", "description": "גלימה אדומה שמעופפת ברוח ונותנת תחושת כוח וגבורה" }
+  "PLACEHOLDER-OBJ-05": { "name": "גלימת גיבורים", "category": "object", "description": "גלימה אדומה שמעופפת ברוח ונותנת תחושת כוח וגבורה" },
+  "PLACEHOLDER-OBJ-06": { "name": "מטה קסמים", "category": "object", "description": "מטה קוסמים עם אבן זוהרת בקצה, שמפזר ניצוצות קסם באוויר" }
 }

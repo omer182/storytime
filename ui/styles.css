@@ -40,6 +40,15 @@
 
 * { box-sizing: border-box; }
 
+/* no visible scrollbars anywhere - scrolling is by touch gesture, wheel, or drag */
+* {
+  scrollbar-width: none;
+}
+
+*::-webkit-scrollbar {
+  display: none;
+}
+
 :focus-visible {
   outline: 2px solid var(--gold);
   outline-offset: 2px;
@@ -1371,16 +1380,4 @@ button.text-btn {
 
   .app-shell::before { right: 14px; }
   .app-shell::after { left: 14px; transform: scaleX(-1); }
-
-  main {
-    scrollbar-width: thin;
-    scrollbar-color: var(--gold-line) transparent;
-  }
-
-  main::-webkit-scrollbar { width: 6px; }
-  main::-webkit-scrollbar-track { background: transparent; }
-  main::-webkit-scrollbar-thumb {
-    background: var(--gold-line);
-    border-radius: 999px;
-  }
 }

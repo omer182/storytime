@@ -24,6 +24,8 @@ const CATEGORY_EMOJI: Record<Category, string> = {
   object: '🎒',
 };
 
+// .jpg first - the generated catalog art is stored as compressed jpg, so the common case
+// costs no wasted 404. .png stays as a fallback for hand-dropped files.
 function figureImageCandidates(uid: string): string[] {
   return [`figure-images/${uid}.jpg`, `figure-images/${uid}.png`];
 }
