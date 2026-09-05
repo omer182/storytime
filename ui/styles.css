@@ -841,6 +841,24 @@ button.text-btn {
   margin: 6px 0 18px;
 }
 
+/* holds a scene's place while its illustration is still being drawn - square, like the 1024x1024
+   pictures that replace it, so the text around it doesn't shift when one lands */
+.story-illustration-pending {
+  aspect-ratio: 1 / 1;
+  background: linear-gradient(100deg, var(--surface-sunken) 30%, var(--surface) 50%, var(--surface-sunken) 70%);
+  background-size: 300% 100%;
+  animation: illustration-shimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes illustration-shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .story-illustration-pending { animation: none; }
+}
+
 /* pinned CTA - a real flex row between main and bottom-nav, not scroll-tracked */
 .generate-bar {
   flex: 0 0 auto;

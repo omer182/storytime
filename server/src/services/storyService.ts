@@ -11,6 +11,31 @@ import { Category, Figure, Story, StoryFigureEntry, StorySummary, StoryStatus, S
 const REQUIRED_CATEGORIES: Category[] = ['character', 'location', 'mood'];
 const RECENT_HISTORY_LIMIT = 3;
 
+// Illustrations take 10-50s while the story text itself is ready in about 10, so generate no
+// longer waits for them: it returns the text and leaves the pictures running here, to be picked
+// up by GET /api/stories/:id/images. Like the images themselves this is memory-only - a restart
+// simply loses any in-flight job, and the reader gets the story without pictures.
+export interface ImageJob {
+  status: 'pending' | 'done';
+  images: (string | null)[];
+  updatedAt: number;
+}
+
+const imageJobs = new Map<string, ImageJob>();
+const IMAGE_JOB_TTL_MS = 15 * 60 * 1000;
+
+function pruneImageJobs(): void {
+  const cutoff = Date.now() - IMAGE_JOB_TTL_MS;
+  for (const [id, job] of imageJobs) {
+    if (job.updatedAt < cutoff) imageJobs.delete(id);
+  }
+}
+
+export function getImageJob(storyId: string): ImageJob | null {
+  pruneImageJobs();
+  return imageJobs.get(storyId) || null;
+}
+
 interface StoryRow {
   id: string;
   status: StoryStatus;
@@ -246,21 +271,35 @@ export async function generateStory(
   // OPENAI_API_KEY may be present in the environment.
   if (config.generateImages && config.openaiApiKey && config.llmProvider !== 'mock' && wantsImages) {
     const imagesStart = Date.now();
-    try {
-      // individual scenes can come back null (safety-system blocks) - keep the array only if
-      // at least one image survived, so the client isn't handed three empty slots
-      const images = await generateStoryImages(storyText, story.figures);
-      const succeeded = images.filter(Boolean).length;
-      if (succeeded > 0) {
-        savedStory.images = images;
-      }
-      log.info(
-        { durationMs: Date.now() - imagesStart, count: succeeded, failed: images.length - succeeded },
-        'story illustrations generated'
-      );
-    } catch (err) {
-      log.error({ err, durationMs: Date.now() - imagesStart }, 'story image generation failed');
-    }
+    pruneImageJobs();
+    imageJobs.set(storyId, { status: 'pending', images: [null, null, null], updatedAt: Date.now() });
+    savedStory.imagesPending = true;
+
+    // while the job is pending a null slot only means "not back yet"; once it is done, a null
+    // is a scene that couldn't be drawn at all
+    const onScene = (index: number, image: string | null) => {
+      const job = imageJobs.get(storyId);
+      if (!job || job.status === 'done') return;
+      job.images[index] = image;
+      job.updatedAt = Date.now();
+    };
+
+    // deliberately not awaited - the reader gets the story now and the pictures land later
+    void generateStoryImages(storyText, story.figures, onScene)
+      .then((images) => {
+        // individual scenes can come back null (safety-system blocks); the positions are kept
+        // so the ones that made it still land in the right places in the story
+        const succeeded = images.filter(Boolean).length;
+        imageJobs.set(storyId, { status: 'done', images, updatedAt: Date.now() });
+        log.info(
+          { durationMs: Date.now() - imagesStart, count: succeeded, failed: images.length - succeeded },
+          'story illustrations generated'
+        );
+      })
+      .catch((err) => {
+        imageJobs.set(storyId, { status: 'done', images: [], updatedAt: Date.now() });
+        log.error({ err, durationMs: Date.now() - imagesStart }, 'story image generation failed');
+      });
   }
 
   log.info({ totalDurationMs: Date.now() - overallStart }, 'generating story: done');

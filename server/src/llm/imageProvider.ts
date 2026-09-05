@@ -197,8 +197,17 @@ async function generateImage(
 // produced - callers keep the positions so the surviving images still land in the right places.
 export async function generateStoryImages(
   storyText: string,
-  figures: StoryFigureEntry[]
+  figures: StoryFigureEntry[],
+  onScene?: (index: number, image: string | null) => void
 ): Promise<(string | null)[]> {
   const { scenes, fallback } = await writeScenePrompts(storyText, figures);
-  return Promise.all(scenes.map((prompt, index) => generateImage(prompt, index, fallback)));
+  return Promise.all(
+    scenes.map(async (prompt, index) => {
+      const image = await generateImage(prompt, index, fallback);
+      // reported as each scene lands, so a reader can be shown the first picture while a scene
+      // that needed retries is still rendering
+      onScene?.(index, image);
+      return image;
+    })
+  );
 }

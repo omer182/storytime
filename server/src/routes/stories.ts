@@ -152,6 +152,41 @@ const VALID_LENGTHS = ['short', 'medium', 'long'];
 
 /**
  * @openapi
+ * /api/stories/{id}/images:
+ *   get:
+ *     summary: Collect the illustrations for a story generated in this server run
+ *     description: >
+ *       Generate returns as soon as the story text is ready and leaves the illustrations
+ *       rendering in the background; poll this until status is "done". Illustrations are
+ *       memory-only and never persisted, so an unknown or restarted story reports "none".
+ *       An entry in images may be null when that one scene could not be drawn.
+ *     tags: [Stories]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Current state of the illustrations
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status: { type: string, enum: [pending, done, none] }
+ *                 images:
+ *                   type: array
+ *                   items: { type: string, nullable: true }
+ */
+router.get('/stories/:id/images', (req: Request, res: Response) => {
+  const job = storyService.getImageJob(req.params.id);
+  if (!job) return res.json({ status: 'none', images: [] });
+  res.json({ status: job.status, images: job.images });
+});
+
+/**
+ * @openapi
  * /api/stories/{id}/generate:
  *   post:
  *     summary: Generate the story text (and, if enabled, illustrations) from the scanned figures

@@ -28,6 +28,9 @@ export interface Story {
   figures: StoryFigureEntry[];
   // only present right after generating - never persisted, so a later GET won't have them
   images?: (string | null)[];
+  // true while the illustrations are still rendering server-side - the client polls
+  // GET /stories/:id/images for them
+  imagesPending?: boolean;
 }
 
 export interface StorySummary {

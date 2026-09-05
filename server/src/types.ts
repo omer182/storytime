@@ -30,6 +30,9 @@ export interface Story {
   // only present on the response to POST /stories/:id/generate - never persisted,
   // so a later GET of the same story won't have them
   images?: (string | null)[];
+  // set on the generate response when illustrations are still rendering - the client then polls
+  // GET /api/stories/:id/images for them
+  imagesPending?: boolean;
 }
 
 export interface StorySummary {

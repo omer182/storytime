@@ -28,13 +28,14 @@ const config: Config = {
   // Claude has no image generation - so this only takes effect when OPENAI_API_KEY is set
   generateImages: (process.env.GENERATE_IMAGES ?? 'true') === 'true',
   imageModel: process.env.IMAGE_MODEL || 'gpt-image-1.5',
-  // 'low' renders in roughly half the time and costs less per image; 'medium' keeps the flatter,
-  // softer storybook look. Anything unrecognized falls back to 'medium'.
+  // 'low' renders in roughly half the time (~11s vs ~21s per image) and costs less, which is
+  // what the illustrations ship at; 'medium' gives a flatter, softer storybook look for more
+  // money and time. Anything unrecognized falls back to 'low'.
   imageQuality: (['low', 'medium', 'high'] as const).includes(
     process.env.IMAGE_QUALITY as 'low' | 'medium' | 'high'
   )
     ? (process.env.IMAGE_QUALITY as 'low' | 'medium' | 'high')
-    : 'medium',
+    : 'low',
   // __dirname is server/src in dev (tsx runs .ts in place) and server/dist in prod
   // (tsc-compiled) - both are direct children of server/, so '..' always lands
   // back on server/ regardless of which mode is running.

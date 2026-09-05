@@ -127,43 +127,72 @@ function missingCategories(figures: { category: Category }[]): Category[] {
   return REQUIRED_CATEGORIES.filter((cat) => !present.has(cat));
 }
 
+const ILLUSTRATION_ALTS = ['איור פתיחת הסיפור', 'איור מאמצע הסיפור', 'איור סיום הסיפור'];
+
+function illustrationElement(index: number, src: string | null): HTMLElement {
+  if (src) {
+    const img = document.createElement('img');
+    img.src = src;
+    img.alt = ILLUSTRATION_ALTS[index];
+    img.className = 'story-illustration';
+    img.dataset.slot = String(index);
+    return img;
+  }
+  // the story text arrives before its pictures, so each scene holds its place with a shimmering
+  // frame that is swapped for the illustration when it lands
+  const slot = document.createElement('div');
+  slot.className = 'story-illustration story-illustration-pending';
+  slot.dataset.slot = String(index);
+  slot.setAttribute('role', 'img');
+  slot.setAttribute('aria-label', `${ILLUSTRATION_ALTS[index]} - עוד רגע…`);
+  return slot;
+}
+
 function renderGeneratedStory(
   storyText: string,
   title: string | null,
-  images?: (string | null)[]
+  images?: (string | null)[],
+  pending?: boolean
 ): void {
   el.generatedStoryTitle.textContent = title || '';
   el.generatedStory.innerHTML = '';
-
-  const addImage = (src: string, alt: string) => {
-    const img = document.createElement('img');
-    img.src = src;
-    img.alt = alt;
-    img.className = 'story-illustration';
-    el.generatedStory.appendChild(img);
-  };
 
   const paragraphs = storyText
     .split(/\n{2,}/)
     .map((p) => p.trim())
     .filter(Boolean);
-  // a slot can be null when that one illustration failed - the other scenes still get theirs
+  // a slot stays empty when that one illustration failed - the other scenes still get theirs.
+  // while `pending` it is a picture still rendering, and gets a placeholder instead.
   const imageAt = (i: number) => (images && images.length >= 3 ? images[i] : null);
+  const showsSlot = (i: number) => Boolean(imageAt(i)) || Boolean(pending);
   const middleIndex = Math.floor((paragraphs.length - 1) / 2);
 
-  const opening = imageAt(0);
-  if (opening) addImage(opening, 'איור פתיחת הסיפור');
+  if (showsSlot(0)) el.generatedStory.appendChild(illustrationElement(0, imageAt(0)));
 
-  const middle = imageAt(1);
   paragraphs.forEach((text, i) => {
     const p = document.createElement('p');
     p.textContent = text;
     el.generatedStory.appendChild(p);
-    if (middle && i === middleIndex) addImage(middle, 'איור מאמצע הסיפור');
+    if (i === middleIndex && showsSlot(1)) {
+      el.generatedStory.appendChild(illustrationElement(1, imageAt(1)));
+    }
   });
 
-  const ending = imageAt(2);
-  if (ending) addImage(ending, 'איור סיום הסיפור');
+  if (showsSlot(2)) el.generatedStory.appendChild(illustrationElement(2, imageAt(2)));
+}
+
+// Swaps in the pictures that have arrived without rebuilding the story around them, so the text
+// the reader is looking at doesn't jump. Once done, any placeholder still empty is a scene that
+// couldn't be drawn, and is dropped.
+function applyIllustrations(images: (string | null)[], done: boolean): void {
+  el.generatedStory
+    .querySelectorAll<HTMLElement>('.story-illustration-pending')
+    .forEach((slot) => {
+      const index = Number(slot.dataset.slot);
+      const src = images[index];
+      if (src) slot.replaceWith(illustrationElement(index, src));
+      else if (done) slot.remove();
+    });
 }
 
 function renderStory(): void {
@@ -209,7 +238,12 @@ function renderStory(): void {
   });
 
   if (isGenerated && currentStory.storyText) {
-    renderGeneratedStory(currentStory.storyText, currentStory.title, currentStory.images);
+    renderGeneratedStory(
+      currentStory.storyText,
+      currentStory.title,
+      currentStory.images,
+      currentStory.imagesPending
+    );
     el.generatedWrap.classList.remove('hidden');
     el.deckSection.classList.add('hidden');
     el.generateBar.classList.add('hidden');
@@ -635,6 +669,64 @@ function selectLength(button: HTMLButtonElement): void {
   selectedLength = button.dataset.length as StoryLength;
 }
 
+interface IllustrationsResponse {
+  status: 'pending' | 'done' | 'none';
+  images: (string | null)[];
+}
+
+const ILLUSTRATION_POLL_MS = 2000;
+// generous: three scenes, and one that keeps getting refused walks a retry ladder before it gives
+// up. Past this the placeholders come down and the story simply stays text-only.
+const ILLUSTRATION_POLL_TIMEOUT_MS = 4 * 60 * 1000;
+
+let illustrationPollTimer: number | null = null;
+
+function stopIllustrationPolling(): void {
+  if (illustrationPollTimer !== null) {
+    clearTimeout(illustrationPollTimer);
+    illustrationPollTimer = null;
+  }
+}
+
+// The generate call now returns as soon as the story text is ready, so the pictures are collected
+// here and dropped into their placeholders as they arrive.
+function pollIllustrations(storyId: string): void {
+  stopIllustrationPolling();
+  const deadline = Date.now() + ILLUSTRATION_POLL_TIMEOUT_MS;
+
+  const finish = (images: (string | null)[]) => {
+    if (currentStory && currentStory.id === storyId) {
+      currentStory.images = images;
+      currentStory.imagesPending = false;
+    }
+    applyIllustrations(images, true);
+  };
+
+  const tick = async (): Promise<void> => {
+    // the reader moved on to another story - their pictures aren't wanted any more
+    if (!currentStory || currentStory.id !== storyId) return stopIllustrationPolling();
+
+    try {
+      const res = await api<IllustrationsResponse>(`/stories/${storyId}/images`);
+      if (!currentStory || currentStory.id !== storyId) return stopIllustrationPolling();
+
+      // 'none' means the server has no job for this story (illustrations off, or restarted)
+      if (res.status === 'none') return finish([]);
+      if (res.status === 'done') return finish(res.images);
+
+      if (currentStory) currentStory.images = res.images;
+      applyIllustrations(res.images, false);
+    } catch {
+      // a failed poll is not fatal - the next tick tries again
+    }
+
+    if (Date.now() >= deadline) return finish(currentStory?.images || []);
+    illustrationPollTimer = window.setTimeout(tick, ILLUSTRATION_POLL_MS);
+  };
+
+  void tick();
+}
+
 async function generateStory(): Promise<void> {
   if (!currentStory) return;
   const length = selectedLength;
@@ -652,6 +744,7 @@ async function generateStory(): Promise<void> {
     });
     renderStory();
     document.querySelector('main')?.scrollTo({ top: 0 });
+    if (currentStory.imagesPending) pollIllustrations(currentStory.id);
   } catch (err) {
     if (err instanceof ApiError && err.status === 422) {
       showToast('חסרות דמויות: ' + (err.body.missing || []).map((c) => CATEGORY_LABELS[c]).join(', '));
@@ -668,6 +761,7 @@ async function generateStory(): Promise<void> {
 }
 
 function abandonStory(): void {
+  stopIllustrationPolling();
   currentStory = null;
   renderStory();
 }
