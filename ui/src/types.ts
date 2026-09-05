@@ -27,7 +27,7 @@ export interface Story {
   favorite: boolean;
   figures: StoryFigureEntry[];
   // only present right after generating - never persisted, so a later GET won't have them
-  images?: string[];
+  images?: (string | null)[];
 }
 
 export interface StorySummary {

@@ -29,7 +29,7 @@ export interface Story {
   figures: StoryFigureEntry[];
   // only present on the response to POST /stories/:id/generate - never persisted,
   // so a later GET of the same story won't have them
-  images?: string[];
+  images?: (string | null)[];
 }
 
 export interface StorySummary {

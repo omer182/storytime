@@ -247,9 +247,15 @@ export async function generateStory(
   if (config.generateImages && config.openaiApiKey && config.llmProvider !== 'mock' && wantsImages) {
     const imagesStart = Date.now();
     try {
-      savedStory.images = await generateStoryImages(storyText, story.figures);
+      // individual scenes can come back null (safety-system blocks) - keep the array only if
+      // at least one image survived, so the client isn't handed three empty slots
+      const images = await generateStoryImages(storyText, story.figures);
+      const succeeded = images.filter(Boolean).length;
+      if (succeeded > 0) {
+        savedStory.images = images;
+      }
       log.info(
-        { durationMs: Date.now() - imagesStart, count: savedStory.images.length },
+        { durationMs: Date.now() - imagesStart, count: succeeded, failed: images.length - succeeded },
         'story illustrations generated'
       );
     } catch (err) {

@@ -127,7 +127,11 @@ function missingCategories(figures: { category: Category }[]): Category[] {
   return REQUIRED_CATEGORIES.filter((cat) => !present.has(cat));
 }
 
-function renderGeneratedStory(storyText: string, title: string | null, images?: string[]): void {
+function renderGeneratedStory(
+  storyText: string,
+  title: string | null,
+  images?: (string | null)[]
+): void {
   el.generatedStoryTitle.textContent = title || '';
   el.generatedStory.innerHTML = '';
 
@@ -143,19 +147,23 @@ function renderGeneratedStory(storyText: string, title: string | null, images?: 
     .split(/\n{2,}/)
     .map((p) => p.trim())
     .filter(Boolean);
-  const hasImages = !!images && images.length >= 3;
+  // a slot can be null when that one illustration failed - the other scenes still get theirs
+  const imageAt = (i: number) => (images && images.length >= 3 ? images[i] : null);
   const middleIndex = Math.floor((paragraphs.length - 1) / 2);
 
-  if (hasImages) addImage(images![0], 'איור פתיחת הסיפור');
+  const opening = imageAt(0);
+  if (opening) addImage(opening, 'איור פתיחת הסיפור');
 
+  const middle = imageAt(1);
   paragraphs.forEach((text, i) => {
     const p = document.createElement('p');
     p.textContent = text;
     el.generatedStory.appendChild(p);
-    if (hasImages && i === middleIndex) addImage(images![1], 'איור מאמצע הסיפור');
+    if (middle && i === middleIndex) addImage(middle, 'איור מאמצע הסיפור');
   });
 
-  if (hasImages) addImage(images![2], 'איור סיום הסיפור');
+  const ending = imageAt(2);
+  if (ending) addImage(ending, 'איור סיום הסיפור');
 }
 
 function renderStory(): void {

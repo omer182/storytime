@@ -66,32 +66,72 @@ async function writeScenePrompts(storyText: string, figures: StoryFigureEntry[])
   return prompts;
 }
 
-async function generateImage(prompt: string, index: number): Promise<string> {
-  const start = Date.now();
-  try {
-    const res = await getClient().images.generate({
-      model: config.imageModel,
-      prompt,
-      size: '1024x1024',
-      quality: 'medium',
-      n: 1,
-    });
-    const b64 = res.data?.[0]?.b64_json;
-    if (!b64) {
-      throw new Error('image generation returned no data');
-    }
-    logger.debug({ index, model: config.imageModel, durationMs: Date.now() - start }, 'illustration generated');
-    return `data:image/png;base64,${b64}`;
-  } catch (err) {
-    logger.error({ err, index, model: config.imageModel, durationMs: Date.now() - start }, 'illustration generation failed');
-    throw err;
-  }
+// The image API moderates the *generated image* as well as the prompt (moderation_stage:
+// "output"), and that check is non-deterministic - the same innocent picture-book prompt can
+// pass on one call and trip on the next. So a block is retried as-is once, then once more with
+// an explicit wholesomeness clause appended, before the scene is given up on.
+const SAFETY_CLAUSE =
+  ' Wholesome, innocent, age-appropriate for young children: fully clothed characters, ' +
+  'friendly expressions, no violence, no scary imagery.';
+
+function isModerationBlocked(err: unknown): boolean {
+  return typeof err === 'object' && err !== null && (err as { code?: string }).code === 'moderation_blocked';
 }
 
+async function requestImage(prompt: string): Promise<string> {
+  const res = await getClient().images.generate({
+    model: config.imageModel,
+    prompt,
+    size: '1024x1024',
+    quality: 'medium',
+    n: 1,
+  });
+  const b64 = res.data?.[0]?.b64_json;
+  if (!b64) {
+    throw new Error('image generation returned no data');
+  }
+  return `data:image/png;base64,${b64}`;
+}
+
+// Returns null rather than throwing: one blocked scene shouldn't cost the reader the other two.
+async function generateImage(prompt: string, index: number): Promise<string | null> {
+  const start = Date.now();
+  const attempts = [prompt, prompt, prompt + SAFETY_CLAUSE];
+
+  for (let attempt = 0; attempt < attempts.length; attempt++) {
+    try {
+      const image = await requestImage(attempts[attempt]);
+      logger.debug(
+        { index, attempt, model: config.imageModel, durationMs: Date.now() - start },
+        'illustration generated'
+      );
+      return image;
+    } catch (err) {
+      const blocked = isModerationBlocked(err);
+      const lastAttempt = attempt === attempts.length - 1;
+      if (blocked && !lastAttempt) {
+        logger.warn(
+          { index, attempt, model: config.imageModel },
+          'illustration blocked by the safety system, retrying'
+        );
+        continue;
+      }
+      logger.error(
+        { err, index, attempt, blocked, model: config.imageModel, durationMs: Date.now() - start },
+        'illustration generation failed'
+      );
+      return null;
+    }
+  }
+  return null;
+}
+
+// One entry per scene, in scene order. A null means that scene's illustration couldn't be
+// produced - callers keep the positions so the surviving images still land in the right places.
 export async function generateStoryImages(
   storyText: string,
   figures: StoryFigureEntry[]
-): Promise<string[]> {
+): Promise<(string | null)[]> {
   const scenePrompts = await writeScenePrompts(storyText, figures);
   return Promise.all(scenePrompts.map((prompt, index) => generateImage(prompt, index)));
 }
