@@ -50,6 +50,9 @@ export interface StorySummary {
 export interface LLMPrompt {
   system: string;
   user: string;
+  // Hebrew is expensive to tokenize - measured at roughly 4-6 tokens per word - so the ceiling
+  // has to scale with the requested length or it silently truncates the story mid-sentence
+  maxTokens: number;
 }
 
 export interface LLMProvider {

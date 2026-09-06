@@ -15,12 +15,12 @@ function getClient(): OpenAI {
   return client;
 }
 
-export async function generateStory({ system, user }: LLMPrompt): Promise<string> {
+export async function generateStory({ system, user, maxTokens }: LLMPrompt): Promise<string> {
   const start = Date.now();
   try {
     const response = await getClient().chat.completions.create({
       model: config.llmModel,
-      max_tokens: 2000,
+      max_tokens: maxTokens,
       messages: [
         { role: 'system', content: system },
         { role: 'user', content: user },

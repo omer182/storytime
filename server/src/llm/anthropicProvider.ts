@@ -15,12 +15,12 @@ function getClient(): Anthropic {
   return client;
 }
 
-export async function generateStory({ system, user }: LLMPrompt): Promise<string> {
+export async function generateStory({ system, user, maxTokens }: LLMPrompt): Promise<string> {
   const start = Date.now();
   try {
     const response = await getClient().messages.create({
       model: config.llmModel,
-      max_tokens: 2000,
+      max_tokens: maxTokens,
       system,
       messages: [{ role: 'user', content: user }],
     });
