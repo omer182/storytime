@@ -20,8 +20,8 @@ export interface Config {
 
 const config: Config = {
   port: parseInt(process.env.PORT || '3000', 10) || 3000,
-  llmProvider: process.env.LLM_PROVIDER || 'anthropic',
-  llmModel: process.env.LLM_MODEL || 'claude-haiku-4-5-20251001',
+  llmProvider: process.env.LLM_PROVIDER || 'openai',
+  llmModel: process.env.LLM_MODEL || 'gpt-4.1',
   anthropicApiKey: process.env.ANTHROPIC_API_KEY || '',
   openaiApiKey: process.env.OPENAI_API_KEY || '',
   // illustrations always go through OpenAI's image API regardless of LLM_PROVIDER -

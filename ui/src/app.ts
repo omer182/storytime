@@ -157,9 +157,19 @@ function renderGeneratedStory(
   el.generatedStoryTitle.textContent = title || '';
   el.generatedStory.innerHTML = '';
 
+  // paragraphs are separated by blank lines, but a paragraph can hold single line breaks of its
+  // own - gpt-4.1 puts each line of dialogue on its own line, and .story-text renders those with
+  // white-space: pre-wrap. Each line is trimmed because it also arrives with trailing spaces,
+  // which pre-wrap would otherwise keep and hang off the edge of the line.
   const paragraphs = storyText
     .split(/\n{2,}/)
-    .map((p) => p.trim())
+    .map((p) =>
+      p
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .join('\n')
+    )
     .filter(Boolean);
   // a slot stays empty when that one illustration failed - the other scenes still get theirs.
   // while `pending` it is a picture still rendering, and gets a placeholder instead.
