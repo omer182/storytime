@@ -1,6 +1,6 @@
 {
   "name": "storytime-server",
-  "version": "1.7.1",
+  "version": "1.8.0",
   "private": true,
   "description": "Bedtime story generator backend - NFC figure scans to a Hebrew story via Claude",
   "main": "dist/server.js",
