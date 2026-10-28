@@ -838,6 +838,7 @@ async function toggleHistoryStory(container: HTMLElement, storyId: string): Prom
   const existing = container.querySelector('.story-text');
   if (existing) {
     existing.remove();
+    container.classList.remove('expanded');
     return;
   }
   try {
@@ -846,6 +847,7 @@ async function toggleHistoryStory(container: HTMLElement, storyId: string): Prom
     textDiv.className = 'story-text';
     textDiv.textContent = story.storyText || '';
     container.appendChild(textDiv);
+    container.classList.add('expanded');
   } catch (err) {
     showToast((err as Error).message);
   }

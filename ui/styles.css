@@ -27,6 +27,11 @@
   --cat-mood: #a374a8;
   --cat-object: #c2a34a;
 
+  /* content widths on wide screens */
+  --content-max: 920px;
+  --reading-max: 760px;
+  --history-max: 1200px;
+
   --radius: 16px;
   --radius-sm: 10px;
   --shadow: 0 3px 14px rgba(0, 0, 0, 0.45);
@@ -40,13 +45,31 @@
 
 * { box-sizing: border-box; }
 
-/* no visible scrollbars anywhere - scrolling is by touch gesture, wheel, or drag */
+/* no visible scrollbars on touch screens - scrolling is by gesture */
 * {
   scrollbar-width: none;
 }
 
 *::-webkit-scrollbar {
   display: none;
+}
+
+/* mouse users get a thin scrollbar, so they can see a list is scrollable */
+@media (hover: hover) and (pointer: fine) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--gold-line) transparent;
+  }
+
+  *::-webkit-scrollbar {
+    display: block;
+    width: 8px;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: var(--gold-line);
+    border-radius: 4px;
+  }
 }
 
 :focus-visible {
@@ -1375,33 +1398,106 @@ button.text-btn {
   flex-shrink: 0;
 }
 
-/* wider screens: keep the mobile layout centered, framed like a book on a table */
-@media (min-width: 640px) {
+/* wide screens: title + tabs share the header, content gets real width */
+@media (min-width: 900px) {
   .app-shell {
-    max-width: 560px;
-    margin: 24px auto;
-    height: calc(100dvh - 48px);
-    border-radius: 18px;
-    box-shadow:
-      0 0 0 1px var(--gold-line),
-      0 20px 60px rgba(0, 0, 0, 0.45);
-    position: relative;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "title nav"
+      "main main"
+      "generate generate";
   }
 
-  .topbar { border-radius: 18px 18px 0 0; }
-
-  .app-shell::before,
-  .app-shell::after {
-    content: "❦";
-    position: absolute;
-    top: 8px;
-    color: var(--gold);
-    opacity: 0.55;
-    font-size: 0.85rem;
-    pointer-events: none;
-    z-index: 1;
+  .topbar,
+  .bottom-nav {
+    background: var(--surface);
+    border-bottom: 1px solid var(--gold-line);
   }
 
-  .app-shell::before { right: 14px; }
-  .app-shell::after { left: 14px; transform: scaleX(-1); }
+  .topbar {
+    grid-area: title;
+    padding: 14px 32px;
+  }
+
+  .topbar h1 {
+    justify-content: flex-start;
+    font-size: 1.8rem;
+  }
+
+  .title-flourish { display: none; }
+
+  /* full-width pill buttons look stretched on a wide page */
+  #btn-new-story,
+  #btn-restart-after,
+  #btn-add-figure {
+    display: block;
+    width: auto;
+    min-width: 320px;
+    margin-inline: auto;
+  }
+
+  main { grid-area: main; }
+
+  .bottom-nav {
+    grid-area: nav;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 4px;
+    padding: 0 32px;
+    border-top: none;
+  }
+
+  .nav-btn {
+    flex: 0 0 auto;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    height: 44px;
+    padding: 0 18px;
+    border-radius: 999px;
+  }
+
+  .nav-btn span { font-size: 0.95rem; }
+
+  .nav-btn.active { background: var(--gold-soft); }
+
+  .nav-btn.active::after { display: none; }
+
+  .tab-panel.active { padding: 28px 32px; }
+
+  #tab-create > *,
+  #tab-manage > * { max-width: var(--content-max); }
+
+  #tab-history > * { max-width: var(--history-max); }
+
+  #generated-story-wrap {
+    max-width: var(--reading-max);
+    margin-inline: auto;
+  }
+
+  #generated-story-wrap .story-text { font-size: 1.3rem; }
+
+  .history-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 20px;
+    align-items: start;
+  }
+
+  .history-grid .history-item { margin: 0; }
+
+  .history-grid .history-item.expanded { grid-column: 1 / -1; }
+
+  .generate-bar {
+    grid-area: generate;
+    max-width: var(--content-max);
+    padding: 12px 32px;
+  }
+
+  /* the footer holds the main action here, so toasts drop in under the header instead */
+  .toast {
+    top: 84px;
+    bottom: auto;
+  }
 }
