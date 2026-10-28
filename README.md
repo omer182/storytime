@@ -18,7 +18,7 @@ Both are independent TypeScript projects with their own `package.json`. The fron
 1. **Start a story.** `POST /api/stories` creates an empty story (`status: "collecting"`).
 2. **Pick the cast.** In the UI you choose from the deck of figures, one category at a time (`POST /api/stories/:id/figures`). A story needs at least one **character**, one **place**, and one **mood**; **objects** are optional.
 3. **Generate.** Pick a story length (short / medium / long, via a slider) and whether to include illustrations (off by default - it's the costlier part). `POST /api/stories/:id/generate` asks the configured LLM (OpenAI `gpt-4.1` by default; Claude is supported too) for the Hebrew story plus a short title, and saves it. If illustrations were requested, three Disney/Pixar-style pictures - opening, middle, ending - are then generated in parallel via OpenAI's image API, staying strictly on the actual plot and cast. See [Illustrations](server/README.md#illustrations).
-4. **Read it, and read it again.** Generated stories show up in history (`GET /api/stories`). Stories that were started but never generated don't. Illustrations are never saved - they're shown once, in the session that generated them.
+4. **Read it, and read it again.** Generated stories show up in history (`GET /api/stories`), with the opening illustration as their cover. Stories that were started but never generated don't. Illustrations are saved next to the database (about 380KB per illustrated story), so a story keeps its pictures when you open it again later.
 
 Figures can have a thumbnail (`ui/figure-images/`) and, for places, an optional real photograph that the illustrations are painted over, so a story can happen in an actual room. See [Managing the deck](server/README.md#managing-the-deck).
 
@@ -103,7 +103,7 @@ Full walkthrough (registry visibility, volume/host-path notes, building from the
 - [x] Web UI (mobile-first, Hebrew RTL)
 - [x] Deck of figures with thumbnails, managed from the UI and API
 - [x] Multi-provider LLM support (OpenAI, Claude)
-- [x] AI-generated illustrations (3 per story, plot-locked, never persisted)
+- [x] AI-generated illustrations (3 per story, plot-locked, saved with the story and shown in history)
 - [x] Real-place reference photos for illustrations
 - [x] Structured logging (pino) - requests, figures added, generation timing
 - [x] System tests

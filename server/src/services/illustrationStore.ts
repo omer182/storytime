@@ -68,12 +68,21 @@ export function imageUrl(storyId: string, file: ImageFile): string {
   return `/api/stories/${storyId}/images/${file}`;
 }
 
+export function sceneUrl(storyId: string, index: number): string {
+  return imageUrl(storyId, sceneFile(index));
+}
+
 export function sceneUrls(storyId: string, record: StoryImagesRecord): (string | null)[] {
-  return record.scenes.map((saved, i) => (saved ? imageUrl(storyId, sceneFile(i)) : null));
+  return record.scenes.map((saved, i) => (saved ? sceneUrl(storyId, i) : null));
 }
 
 export function setStoryImages(storyId: string, record: StoryImagesRecord): void {
   setImagesStmt.run(JSON.stringify(record), storyId);
+}
+
+// for files no row will ever point at
+export async function removeStoryImages(storyId: string): Promise<void> {
+  await fs.promises.rm(storyDir(storyId), { recursive: true, force: true });
 }
 
 export function parseStoryImages(raw: string | null): StoryImagesRecord | null {

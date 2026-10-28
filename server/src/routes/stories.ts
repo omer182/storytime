@@ -160,9 +160,10 @@ const VALID_LENGTHS = ['short', 'medium', 'long'];
  *     summary: Collect the illustrations for a story generated in this server run
  *     description: >
  *       Generate returns as soon as the story text is ready and leaves the illustrations
- *       rendering in the background; poll this until status is "done". Illustrations are
- *       memory-only and never persisted, so an unknown or restarted story reports "none".
- *       An entry in images may be null when that one scene could not be drawn.
+ *       rendering in the background; poll this until status is "done". Each entry is the URL of
+ *       a saved scene (see /api/stories/{id}/images/{file}), or null while it is still rendering
+ *       or when it could not be drawn. The job itself is memory-only, so an unknown or restarted
+ *       story reports "none" - GET /api/stories/{id} then lists whatever was saved.
  *     tags: [Stories]
  *     parameters:
  *       - in: path

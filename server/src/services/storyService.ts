@@ -5,8 +5,18 @@ import logger from '../logger';
 import * as figureService from './figureService';
 import { getProvider } from '../llm';
 import { buildPrompt } from '../llm/promptBuilder';
-import { generateStoryImages } from '../llm/imageProvider';
-import { imageUrl, parseStoryImages, sceneUrls } from './illustrationStore';
+import * as imageProvider from '../llm/imageProvider';
+import * as mockImageProvider from '../llm/mockImageProvider';
+import {
+  imageUrl,
+  parseStoryImages,
+  removeStoryImages,
+  saveCover,
+  saveScene,
+  sceneUrl,
+  sceneUrls,
+  setStoryImages,
+} from './illustrationStore';
 import { Category, Figure, Story, StoryFigureEntry, StorySummary, StoryStatus, StoryLength } from '../types';
 
 const REQUIRED_CATEGORIES: Category[] = ['character', 'location', 'mood'];
@@ -14,8 +24,9 @@ const RECENT_HISTORY_LIMIT = 3;
 
 // Illustrations take 10-50s while the story text itself is ready in about 10, so generate no
 // longer waits for them: it returns the text and leaves the pictures running here, to be picked
-// up by GET /api/stories/:id/images. Like the images themselves this is memory-only - a restart
-// simply loses any in-flight job, and the reader gets the story without pictures.
+// up by GET /api/stories/:id/images. Each finished scene is saved to disk right away (see
+// illustrationStore) and the job only holds its URL. The job itself is memory-only - a restart
+// loses an in-flight job, and the story keeps whatever scenes were saved before it.
 export interface ImageJob {
   status: 'pending' | 'done';
   images: (string | null)[];
@@ -271,34 +282,78 @@ export async function generateStory(
 
   const savedStory = getStory(storyId) as Story;
 
-  // illustrations are generated fresh on every request and never persisted (not written to
-  // the db, not saved to disk) - they only ever exist in this one response.
-  // Skipped in mock mode (llmProvider === 'mock') so tests stay offline even though a real
-  // OPENAI_API_KEY may be present in the environment.
-  if (config.generateImages && config.openaiApiKey && config.llmProvider !== 'mock' && wantsImages) {
+  // Mock mode (llmProvider === 'mock') uses the offline placeholder illustrator, so tests stay
+  // offline even though a real OPENAI_API_KEY may be present in the environment.
+  const illustrator =
+    config.llmProvider === 'mock' ? mockImageProvider : config.openaiApiKey ? imageProvider : null;
+  if (config.generateImages && wantsImages && illustrator) {
     const imagesStart = Date.now();
     pruneImageJobs();
     imageJobs.set(storyId, { status: 'pending', images: [null, null, null], updatedAt: Date.now() });
     savedStory.imagesPending = true;
 
+    // saves a finished scene to disk; resolves to its URL, or null if there's no picture to keep
+    const persistScene = async (index: number, image: string | null): Promise<string | null> => {
+      if (!image) return null;
+      try {
+        await saveScene(storyId, index, image);
+        return sceneUrl(storyId, index);
+      } catch (err) {
+        log.error({ err, index }, 'saving story illustration failed');
+        return null;
+      }
+    };
+
     // while the job is pending a null slot only means "not back yet"; once it is done, a null
-    // is a scene that couldn't be drawn at all
+    // is a scene that couldn't be drawn (or saved) at all
+    const sceneSaves: Promise<string | null>[] = [];
     const onScene = (index: number, image: string | null) => {
-      const job = imageJobs.get(storyId);
-      if (!job || job.status === 'done') return;
-      job.images[index] = image;
-      job.updatedAt = Date.now();
+      sceneSaves[index] = persistScene(index, image).then((url) => {
+        const job = imageJobs.get(storyId);
+        if (job && job.status !== 'done') {
+          job.images[index] = url;
+          job.updatedAt = Date.now();
+        }
+        return url;
+      });
     };
 
     // deliberately not awaited - the reader gets the story now and the pictures land later
-    void generateStoryImages(storyText, describedFigures, onScene)
-      .then((images) => {
+    void illustrator
+      .generateStoryImages(storyText, describedFigures, onScene)
+      .then(async (images) => {
         // individual scenes can come back null (safety-system blocks); the positions are kept
         // so the ones that made it still land in the right places in the story
-        const succeeded = images.filter(Boolean).length;
-        imageJobs.set(storyId, { status: 'done', images, updatedAt: Date.now() });
+        const urls = await Promise.all(images.map((image, i) => sceneSaves[i] ?? persistScene(i, image)));
+
+        // the history cover is the opening scene, or the first one that made it
+        const coverSource = urls.findIndex(Boolean);
+        let cover = false;
+        if (coverSource !== -1) {
+          try {
+            await saveCover(storyId, coverSource);
+            cover = true;
+          } catch (err) {
+            log.error({ err }, 'saving story cover failed');
+          }
+        }
+        // the row is updated only after every file is in place, so a listed image always exists
+        try {
+          setStoryImages(storyId, { scenes: urls.map(Boolean), cover });
+        } catch (err) {
+          // nothing will ever point at these files, so don't leave them on disk
+          log.error({ err }, 'recording story illustrations failed - removing their files');
+          await removeStoryImages(storyId).catch((rmErr) =>
+            log.error({ err: rmErr }, 'removing story illustrations failed')
+          );
+          imageJobs.set(storyId, { status: 'done', images: urls.map(() => null), updatedAt: Date.now() });
+          return;
+        }
+
+        const succeeded = urls.filter(Boolean).length;
+        imageJobs.set(storyId, { status: 'done', images: urls, updatedAt: Date.now() });
         log.info(
-          { durationMs: Date.now() - imagesStart, count: succeeded, failed: images.length - succeeded },
+          { durationMs: Date.now() - imagesStart, count: succeeded, failed: urls.length - succeeded },
           'story illustrations generated'
         );
       })
