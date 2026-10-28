@@ -548,22 +548,13 @@ button.text-btn {
 }
 
 /* story options: length slider + include-images toggle */
-.story-options {
+/* story length + pictures: the create form's last row, no card of its own */
+.options-row .deck-group-label::before { display: none; }
+
+.options-row .deck-group-controls {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 14px 16px;
-  margin: 6px 0 4px;
-  box-shadow: var(--shadow);
-}
-
-.option-row {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
 }
 
 .option-label {
@@ -603,6 +594,7 @@ button.text-btn {
 }
 
 .option-toggle {
+  display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: flex-start;
@@ -872,13 +864,27 @@ button.text-btn {
   .story-illustration-pending { animation: none; }
 }
 
-/* pinned CTA - a real flex row between main and bottom-nav, not scroll-tracked */
+/* pinned actions - a real row between main and bottom-nav, not scroll-tracked.
+   Create and Cancel act on the whole story, so they live here rather than in the form */
 .generate-bar {
-  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   padding: 8px 18px;
   max-width: 560px;
   margin: 0 auto;
   width: 100%;
+}
+
+.generate-bar #btn-abandon {
+  flex: 0 0 auto;
+  width: auto;
+  padding: 8px 4px;
+}
+
+.generate-bar #btn-generate {
+  flex: 1 1 auto;
 }
 
 /* history */
@@ -1516,11 +1522,32 @@ button.text-btn {
 
   .history-grid .empty-hint { grid-column: 1 / -1; }
 
+  /* full-width footer bar; its contents line up with the form above */
   .generate-bar {
     grid-area: generate;
-    max-width: var(--content-max);
-    padding: 12px 32px;
+    max-width: none;
+    padding: 14px max(32px, calc((100% - var(--content-max)) / 2));
+    background: var(--surface);
+    border-top: 1px solid var(--gold-line);
   }
+
+  .generate-bar #btn-generate {
+    flex: 0 0 auto;
+    width: auto;
+    min-height: 52px;
+    padding: 0 40px;
+    font-size: 1.1rem;
+  }
+
+  .segmented { width: 300px; }
+
+  .options-row .deck-group-controls {
+    flex-direction: row;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .options-row { border-bottom: none; }
 
   /* the footer holds the main action here, so toasts drop in under the header instead */
   .toast {
