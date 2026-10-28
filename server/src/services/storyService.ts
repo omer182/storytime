@@ -6,6 +6,7 @@ import * as figureService from './figureService';
 import { getProvider } from '../llm';
 import { buildPrompt } from '../llm/promptBuilder';
 import { generateStoryImages } from '../llm/imageProvider';
+import { imageUrl, parseStoryImages, sceneUrls } from './illustrationStore';
 import { Category, Figure, Story, StoryFigureEntry, StorySummary, StoryStatus, StoryLength } from '../types';
 
 const REQUIRED_CATEGORIES: Category[] = ['character', 'location', 'mood'];
@@ -44,6 +45,7 @@ interface StoryRow {
   created_at: string;
   generated_at: string | null;
   favorite: number;
+  images: string | null;
 }
 
 interface StoryFigureRow {
@@ -76,6 +78,7 @@ const recentGeneratedStmt = db.prepare(
 );
 
 function rowToStory(row: StoryRow, figures: StoryFigureRow[]): Story {
+  const recorded = parseStoryImages(row.images);
   return {
     id: row.id,
     status: row.status,
@@ -91,6 +94,7 @@ function rowToStory(row: StoryRow, figures: StoryFigureRow[]): Story {
       addedAt: f.added_at,
       entryId: f.id,
     })),
+    ...(recorded && { images: sceneUrls(row.id, recorded) }),
   };
 }
 
@@ -123,6 +127,7 @@ export function listStories(): StorySummary[] {
       figureCount: story.figures.length,
       figures: story.figures.map((f) => ({ name: f.name, category: f.category })),
       snippet: story.storyText ? story.storyText.slice(0, 120) : null,
+      coverUrl: parseStoryImages(row.images)?.cover ? imageUrl(row.id, 'cover.webp') : null,
     };
   });
 }

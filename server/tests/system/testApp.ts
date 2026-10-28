@@ -6,7 +6,9 @@ import crypto from 'crypto';
 // each test file runs in its own process (node:test default), but give every
 // file its own db file anyway so nothing depends on that isolation staying true
 const dbPath = path.join(os.tmpdir(), `storytime-test-${crypto.randomUUID()}.db`);
+const imagesPath = path.join(os.tmpdir(), `storytime-test-images-${crypto.randomUUID()}`);
 process.env.DB_PATH = dbPath;
+process.env.IMAGES_PATH = imagesPath;
 process.env.LLM_PROVIDER = 'mock';
 
 // must be require(), not a static `import` - TS/ESM imports get hoisted above
@@ -23,6 +25,7 @@ export function cleanup(): void {
       // file may not exist depending on sqlite journal mode - fine
     }
   }
+  fs.rmSync(imagesPath, { recursive: true, force: true });
 }
 
-export { app, dbPath };
+export { app, dbPath, imagesPath };

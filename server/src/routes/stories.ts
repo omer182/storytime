@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import * as storyService from '../services/storyService';
+import * as illustrationStore from '../services/illustrationStore';
 import logger from '../logger';
 
 const router = Router();
@@ -185,6 +186,40 @@ router.get('/stories/:id/images', (req: Request, res: Response) => {
   const job = storyService.getImageJob(req.params.id);
   if (!job) return res.json({ status: 'none', images: [] });
   res.json({ status: job.status, images: job.images });
+});
+
+/**
+ * @openapi
+ * /api/stories/{id}/images/{file}:
+ *   get:
+ *     summary: One persisted illustration of a story (scene 0-2, or its history cover)
+ *     tags: [Stories]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *       - in: path
+ *         name: file
+ *         required: true
+ *         schema: { type: string, enum: [0.webp, 1.webp, 2.webp, cover.webp] }
+ *     responses:
+ *       200:
+ *         description: The image (immutable - safe to cache forever)
+ *         content:
+ *           image/webp: {}
+ *       404: { description: No such illustration }
+ */
+router.get('/stories/:id/images/:file', (req: Request, res: Response) => {
+  const file = illustrationStore.resolveImageFile(req.params.id, req.params.file);
+  if (!file) return res.status(404).json({ error: 'image not found' });
+  res.sendFile(
+    file,
+    { headers: { 'Content-Type': 'image/webp', 'Cache-Control': 'public, max-age=31536000, immutable' } },
+    (err) => {
+      if (err && !res.headersSent) res.status(404).json({ error: 'image not found' });
+    }
+  );
 });
 
 /**

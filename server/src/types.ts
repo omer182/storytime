@@ -31,8 +31,8 @@ export interface Story {
   generatedAt: string | null;
   favorite: boolean;
   figures: StoryFigureEntry[];
-  // only present on the response to POST /stories/:id/generate - never persisted,
-  // so a later GET of the same story won't have them
+  // URLs of the persisted illustrations, in story order; null where a scene couldn't be drawn.
+  // Absent when the story has no illustrations (or they are still rendering - see imagesPending)
   images?: (string | null)[];
   // set on the generate response when illustrations are still rendering - the client then polls
   // GET /api/stories/:id/images for them
@@ -49,6 +49,13 @@ export interface StorySummary {
   figureCount: number;
   figures: { name: string; category: Category }[];
   snippet: string | null;
+  coverUrl: string | null;
+}
+
+// what the stories.images column records: which scene files and whether a cover were saved
+export interface StoryImagesRecord {
+  scenes: boolean[];
+  cover: boolean;
 }
 
 export interface LLMPrompt {
