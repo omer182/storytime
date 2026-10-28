@@ -71,6 +71,7 @@ button:focus-visible {
 html, body {
   margin: 0;
   height: 100%;
+  overflow: hidden;
   color: var(--ink);
   overscroll-behavior: none;
 }
@@ -84,12 +85,12 @@ body {
 
 .hidden { display: none !important; }
 
-/* fixed app-shell: header + nav/CTA always on screen, only the middle scrolls if it must */
+/* fixed app-shell: header + nav/CTA always on screen, only the active tab panel scrolls */
 .app-shell {
   position: relative;
   height: 100dvh;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
   overflow: hidden;
   background:
     radial-gradient(rgba(212, 162, 74, 0.06) 0.5px, transparent 0.5px) 0 0 / 14px 14px,
@@ -143,27 +144,33 @@ body {
 
 main {
   position: relative;
-  flex: 1 1 auto;
   min-height: 0;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  padding: 4px 18px 10px;
-  max-width: 560px;
-  width: 100%;
-  margin: 0 auto;
-}
-
-/* the empty-state hero is sized to fill main exactly - no scrolling should ever be
-   possible there, so disable it outright as a backstop against any residual sub-pixel
-   overflow instead of chasing pixel-perfect alignment */
-main.no-scroll {
   overflow: hidden;
 }
 
+/* each tab panel is its own scroll container, so one tab's state can never block
+   another tab's scrolling, and every tab keeps its own scroll position */
 .tab-panel { display: none; }
 .tab-panel.active {
   display: block;
+  height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 4px 18px 10px;
   animation: panel-fade-in 0.28s ease both;
+}
+
+.tab-panel > * {
+  max-width: 524px;
+  margin-inline: auto;
+}
+
+/* the empty state fills the create panel exactly, so its hero can grow into the space left */
+#tab-create.active:has(> #no-story:not(.hidden)) {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 0;
 }
 
 @keyframes panel-fade-in {
@@ -178,13 +185,12 @@ main h2 {
   letter-spacing: 0.01em;
 }
 
-/* empty state - absolutely positioned to fill main's box exactly, so the hero image
-   below can flex-grow into the real remaining space and touch the bottom nav */
+/* empty state - flex-grows to fill the create panel, so the hero image below can
+   flex-grow into the real remaining space and touch the bottom nav */
 .empty-state {
-  position: absolute;
-  inset: 0;
+  flex: 1 1 auto;
   width: 100%;
-  height: 100%;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -264,9 +270,9 @@ main h2 {
   flex: 1 1 0;
   align-self: stretch;
   min-height: 100px;
-  /* bleed past .empty-state's own side padding (20px) and main's padding (18px sides,
-     10px bottom) so the photo touches the screen edges and the bottom nav */
-  margin: 14px -38px 4px;
+  /* bleed past .empty-state's own side padding (20px) and the panel's side padding
+     (18px) so the photo touches the screen edges and the bottom nav */
+  margin: 14px -38px 0;
   /* only the top edge fades into the page - sides and bottom are true cut edges */
   -webkit-mask-image: linear-gradient(to bottom, transparent 0, black 70px);
   mask-image: linear-gradient(to bottom, transparent 0, black 70px);
