@@ -62,8 +62,6 @@ const el = {
   activeStory: byId<HTMLElement>('active-story'),
   statusRow: byId<HTMLElement>('status-row'),
   storyStatus: byId<HTMLElement>('story-status'),
-  gateProgress: byId<HTMLElement>('gate-progress'),
-  addedFigures: byId<HTMLUListElement>('added-figures'),
   generatedWrap: byId<HTMLElement>('generated-story-wrap'),
   generatedStoryTitle: byId<HTMLElement>('generated-story-title'),
   generatedStory: byId<HTMLElement>('generated-story'),
@@ -222,29 +220,6 @@ function renderStory(): void {
   el.storyStatus.textContent = STATUS_LABELS[currentStory.status] || currentStory.status;
   el.storyStatus.className = 'badge';
 
-  const present = new Set(currentStory.figures.map((f) => f.category));
-  el.gateProgress.querySelectorAll<HTMLElement>('.gate-pill').forEach((pill) => {
-    pill.classList.toggle('done', present.has(pill.dataset.cat as Category));
-  });
-  el.gateProgress.classList.toggle('hidden', isGenerated);
-
-  el.addedFigures.classList.toggle('hidden', isGenerated);
-  el.addedFigures.innerHTML = '';
-  currentStory.figures.forEach((f) => {
-    const li = document.createElement('li');
-    li.dataset.cat = f.category;
-    const nameSpan = document.createElement('span');
-    nameSpan.textContent = f.name;
-    li.appendChild(nameSpan);
-    const removeBtn = document.createElement('button');
-    removeBtn.textContent = '✕';
-    removeBtn.title = 'הסר';
-    removeBtn.setAttribute('aria-label', `הסר את ${f.name}`);
-    removeBtn.addEventListener('click', () => removeFigure(f.entryId));
-    li.appendChild(removeBtn);
-    el.addedFigures.appendChild(li);
-  });
-
   if (isGenerated && currentStory.storyText) {
     renderGeneratedStory(
       currentStory.storyText,
@@ -270,7 +245,7 @@ function renderStory(): void {
     el.deckSection.classList.remove('hidden');
     el.generateBar.classList.remove('hidden');
     el.btnGenerate.disabled = missingCategories(currentStory.figures).length > 0;
-    renderDeck();
+    syncDeckSelection();
   }
 }
 
@@ -312,7 +287,9 @@ function enableDragScroll(row: HTMLElement): void {
   });
 }
 
-function renderDeck(): void {
+// the deck's DOM is built once per loadDeck() and only its selection state is synced
+// afterwards, so picking a figure never rebuilds (or re-scrolls) the controls
+function buildDeck(): void {
   el.deck.innerHTML = '';
   const groups: Partial<Record<Category, Figure[]>> = {};
   deck.forEach((f) => {
@@ -328,22 +305,28 @@ function renderDeck(): void {
     const label = document.createElement('div');
     label.className = 'deck-group-label';
     label.textContent = CATEGORY_LABELS[cat] || cat;
+    if (!REQUIRED_CATEGORIES.includes(cat)) {
+      const optional = document.createElement('span');
+      optional.className = 'deck-group-optional';
+      optional.textContent = '(לא חובה)';
+      label.appendChild(optional);
+    }
     group.appendChild(label);
 
+    const controls = document.createElement('div');
+    controls.className = 'deck-group-controls';
+    group.appendChild(controls);
+
     if (PICKER_CATEGORIES.includes(cat)) {
-      const selectedCount = (currentStory?.figures || []).filter((f) => f.category === cat).length;
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'token-btn picker-trigger';
       btn.innerHTML = `<span>${CATEGORY_EMOJI[cat]} בחרו ${CATEGORY_LABELS[cat]}</span>`;
-      if (selectedCount > 0) {
-        const countSpan = document.createElement('span');
-        countSpan.className = 'picker-trigger-count';
-        countSpan.textContent = `${selectedCount} נבחרו`;
-        btn.appendChild(countSpan);
-      }
+      const countSpan = document.createElement('span');
+      countSpan.className = 'picker-trigger-count';
+      btn.appendChild(countSpan);
       btn.addEventListener('click', () => openFigurePickerModal(cat));
-      group.appendChild(btn);
+      controls.appendChild(btn);
     } else {
       const row = document.createElement('div');
       row.className = 'deck-row';
@@ -356,16 +339,49 @@ function renderDeck(): void {
         row.appendChild(btn);
       });
       enableDragScroll(row);
-      group.appendChild(row);
+      controls.appendChild(row);
     }
 
+    const chips = document.createElement('ul');
+    chips.className = 'figure-list category-chips';
+    controls.appendChild(chips);
+
     el.deck.appendChild(group);
+  });
+  syncDeckSelection();
+}
+
+function syncDeckSelection(): void {
+  const figures = currentStory?.figures || [];
+  el.deck.querySelectorAll<HTMLElement>('.deck-group').forEach((group) => {
+    const picked = figures.filter((f) => f.category === group.dataset.cat);
+
+    const count = group.querySelector<HTMLElement>('.picker-trigger-count');
+    if (count) count.textContent = picked.length > 0 ? `${picked.length} נבחרו` : '';
+
+    const chips = group.querySelector<HTMLUListElement>('.category-chips')!;
+    chips.innerHTML = '';
+    picked.forEach((f) => {
+      const li = document.createElement('li');
+      li.dataset.cat = f.category;
+      const nameSpan = document.createElement('span');
+      nameSpan.textContent = f.name;
+      li.appendChild(nameSpan);
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.textContent = '✕';
+      removeBtn.title = 'הסר';
+      removeBtn.setAttribute('aria-label', `הסר את ${f.name}`);
+      removeBtn.addEventListener('click', () => removeFigure(f.entryId));
+      li.appendChild(removeBtn);
+      chips.appendChild(li);
+    });
   });
 }
 
 async function loadDeck(): Promise<void> {
   deck = await api<Figure[]>('/figures');
-  renderDeck();
+  buildDeck();
   renderManageList();
 }
 

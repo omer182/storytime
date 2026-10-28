@@ -482,42 +482,6 @@ button.text-btn {
   font-size: 0.78rem;
 }
 
-.gate-progress {
-  display: flex;
-  gap: 6px;
-  margin-bottom: 12px;
-}
-
-.gate-pill {
-  flex: 1;
-  text-align: center;
-  padding: 6px 4px;
-  border-radius: 999px;
-  font-size: 0.74rem;
-  background: var(--surface-sunken);
-  color: var(--muted);
-  border: 1px solid var(--border);
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
-}
-
-.gate-pill.done {
-  background: var(--gold-soft);
-  color: var(--gold);
-  border-color: var(--gold);
-  font-weight: 600;
-  animation: pill-pop 0.28s ease;
-}
-
-.gate-pill.done::before {
-  content: "✓ ";
-}
-
-@keyframes pill-pop {
-  0% { transform: scale(0.92); }
-  60% { transform: scale(1.04); }
-  100% { transform: scale(1); }
-}
-
 /* added figures */
 .figure-list {
   list-style: none;
@@ -532,6 +496,8 @@ button.text-btn {
   display: flex;
   align-items: center;
   gap: 5px;
+  max-width: 100%;
+  overflow-wrap: anywhere;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 999px;
@@ -713,6 +679,20 @@ button.text-btn {
 
 .deck-group {
   margin-bottom: 10px;
+}
+
+.deck-group-optional {
+  font-size: 0.9em;
+  opacity: 0.8;
+}
+
+/* each category's picks sit right under (phone) or beside (wide) its own control */
+.category-chips {
+  margin: 8px 0 0;
+}
+
+.category-chips:empty {
+  display: none;
 }
 
 .deck-group-label {
@@ -1482,6 +1462,36 @@ button.text-btn {
   }
 
   #generated-story-wrap .story-text { font-size: 1.3rem; }
+
+  /* the create form: label on the start side, controls beside it, one row per category */
+  .deck-group {
+    display: grid;
+    grid-template-columns: 140px minmax(0, 1fr);
+    align-items: start;
+    gap: 12px 24px;
+    margin: 0;
+    padding: 18px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .deck-group-label {
+    margin: 12px 0 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .deck-group-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .deck-group-controls .picker-trigger { width: auto; }
+
+  .category-chips { margin: 0; }
 
   .history-grid {
     display: grid;
