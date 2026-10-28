@@ -249,44 +249,6 @@ function renderStory(): void {
   }
 }
 
-const DRAG_THRESHOLD = 5; // px of pointer movement before a mouse drag counts as scrolling, not a click
-
-function enableDragScroll(row: HTMLElement): void {
-  let startX = 0;
-  let startScrollLeft = 0;
-  let dragging = false;
-
-  // move/up listen on window (not the row, and no setPointerCapture) so the drag keeps
-  // tracking even if the cursor leaves the row - setPointerCapture on a scrollable element
-  // combined with programmatic scrollLeft writes causes some browsers to snap the scroll
-  // position back to where it started once the pointer is released
-  function onMove(event: PointerEvent): void {
-    const dx = event.clientX - startX;
-    if (!dragging && Math.abs(dx) > DRAG_THRESHOLD) {
-      dragging = true;
-      row.classList.add('dragging');
-    }
-    // content should follow the cursor (grab-and-drag), so scrollLeft moves opposite dx
-    if (dragging) row.scrollLeft = startScrollLeft - dx;
-  }
-
-  function onUp(): void {
-    window.removeEventListener('pointermove', onMove);
-    window.removeEventListener('pointerup', onUp);
-    row.classList.remove('dragging');
-    dragging = false;
-  }
-
-  row.addEventListener('pointerdown', (event) => {
-    if (event.pointerType !== 'mouse') return; // touch/pen already scroll natively
-    startX = event.clientX;
-    startScrollLeft = row.scrollLeft;
-    dragging = false;
-    window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerup', onUp);
-  });
-}
-
 // the deck's DOM is built once per loadDeck() and only its selection state is synced
 // afterwards, so picking a figure never rebuilds (or re-scrolls) the controls
 function buildDeck(): void {
@@ -327,24 +289,26 @@ function buildDeck(): void {
       btn.appendChild(countSpan);
       btn.addEventListener('click', () => openFigurePickerModal(cat));
       controls.appendChild(btn);
+      const chips = document.createElement('ul');
+      chips.className = 'figure-list category-chips';
+      controls.appendChild(chips);
     } else {
+      // all options visible as toggle chips - the chip itself shows whether it's picked
       const row = document.createElement('div');
-      row.className = 'deck-row';
+      row.className = 'toggle-chips';
+      row.setAttribute('role', 'group');
+      row.setAttribute('aria-label', CATEGORY_LABELS[cat]);
       groups[cat]!.forEach((figure) => {
         const btn = document.createElement('button');
-        btn.className = 'token-btn';
-        btn.textContent = figure.name;
-        btn.setAttribute('aria-label', `הוסף את ${figure.name} (${CATEGORY_LABELS[cat]})`);
-        btn.addEventListener('click', () => addFigureToStory(figure.uid));
+        btn.type = 'button';
+        btn.className = 'toggle-chip';
+        btn.dataset.uid = figure.uid;
+        btn.dataset.name = figure.name;
+        btn.addEventListener('click', () => toggleMood(figure.uid));
         row.appendChild(btn);
       });
-      enableDragScroll(row);
       controls.appendChild(row);
     }
-
-    const chips = document.createElement('ul');
-    chips.className = 'figure-list category-chips';
-    controls.appendChild(chips);
 
     el.deck.appendChild(group);
   });
@@ -359,7 +323,14 @@ function syncDeckSelection(): void {
     const count = group.querySelector<HTMLElement>('.picker-trigger-count');
     if (count) count.textContent = picked.length > 0 ? `${picked.length} נבחרו` : '';
 
-    const chips = group.querySelector<HTMLUListElement>('.category-chips')!;
+    group.querySelectorAll<HTMLButtonElement>('.toggle-chip').forEach((btn) => {
+      const isPicked = picked.some((f) => f.uid === btn.dataset.uid);
+      btn.setAttribute('aria-pressed', String(isPicked));
+      btn.textContent = isPicked ? `✓ ${btn.dataset.name}` : btn.dataset.name!;
+    });
+
+    const chips = group.querySelector<HTMLUListElement>('.category-chips');
+    if (!chips) return;
     chips.innerHTML = '';
     picked.forEach((f) => {
       const li = document.createElement('li');
@@ -653,10 +624,27 @@ async function addFigureToStory(uid: string): Promise<void> {
       return;
     }
     currentStory.figures = result.figures!;
-    showToast(`נוסף: ${result.figure!.name}`);
     renderStory();
   } catch (err) {
     showToast((err as Error).message);
+  }
+}
+
+// uids with an add/remove request in flight - a fast double tap must not add a mood twice
+const moodRequestsInFlight = new Set<string>();
+
+async function toggleMood(uid: string): Promise<void> {
+  if (!currentStory || moodRequestsInFlight.has(uid)) return;
+  const chip = el.deck.querySelector<HTMLElement>(`.toggle-chip[data-uid="${CSS.escape(uid)}"]`);
+  moodRequestsInFlight.add(uid);
+  chip?.setAttribute('aria-busy', 'true');
+  try {
+    const entry = currentStory.figures.find((f) => f.uid === uid);
+    if (entry) await removeFigure(entry.entryId);
+    else await addFigureToStory(uid);
+  } finally {
+    moodRequestsInFlight.delete(uid);
+    chip?.removeAttribute('aria-busy');
   }
 }
 

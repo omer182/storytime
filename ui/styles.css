@@ -717,26 +717,30 @@ button.text-btn {
 .deck-group[data-cat="mood"] .deck-group-label { --dot: var(--cat-mood); }
 .deck-group[data-cat="object"] .deck-group-label { --dot: var(--cat-object); }
 
-.deck-row {
+.toggle-chips {
   display: flex;
-  gap: 7px;
-  overflow-x: auto;
-  padding-bottom: 2px;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  cursor: grab;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
-.deck-row::-webkit-scrollbar { display: none; }
-
-.deck-row.dragging {
-  cursor: grabbing;
-  scroll-snap-type: none;
-  user-select: none;
+.toggle-chip {
+  min-height: 44px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  font-size: 0.86rem;
+  background: var(--surface-sunken);
+  border: 1px dashed rgba(198, 172, 143, 0.4);
 }
 
-.deck-row.dragging .token-btn {
-  pointer-events: none;
+.toggle-chip[aria-pressed="true"] {
+  background: rgba(212, 162, 74, 0.18);
+  border: 1px solid var(--gold);
+  color: #f0d394;
+  font-weight: 600;
+}
+
+.toggle-chip[aria-busy="true"] {
+  opacity: 0.6;
 }
 
 .token-btn {
