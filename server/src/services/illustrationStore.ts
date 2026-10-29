@@ -1,4 +1,5 @@
 import fs from 'fs';
+import { randomUUID } from 'crypto';
 import path from 'path';
 import sharp from 'sharp';
 import config from '../config';
@@ -30,7 +31,7 @@ function storyDir(storyId: string): string {
 
 async function writeFileAtomic(file: string, data: Buffer): Promise<void> {
   await fs.promises.mkdir(path.dirname(file), { recursive: true });
-  const tmp = `${file}.tmp`;
+  const tmp = `${file}.${randomUUID()}.tmp`; // unique: two renders of one story may overlap
   await fs.promises.writeFile(tmp, data);
   await fs.promises.rename(tmp, file);
 }

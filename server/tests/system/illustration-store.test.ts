@@ -26,13 +26,13 @@ async function webpDataUrl(): Promise<string> {
   return `data:image/webp;base64,${buf.toString('base64')}`;
 }
 
-test('saved scene is served as webp with immutable cache', async () => {
+test('saved scene is served as webp, revalidated on each use', async () => {
   const id = await generatedStoryId();
   await store.saveScene(id, 0, await webpDataUrl());
   const res = await request(app).get(`/api/stories/${id}/images/0.webp`).buffer(true);
   assert.equal(res.status, 200);
   assert.match(res.headers['content-type'], /image\/webp/);
-  assert.match(res.headers['cache-control'], /immutable/);
+  assert.equal(res.headers['cache-control'], 'no-cache');
   assert.equal(Buffer.from(res.body).subarray(8, 12).toString('ascii'), 'WEBP');
 });
 

@@ -25,8 +25,8 @@ const RECENT_HISTORY_LIMIT = 3;
 // Illustrations take 10-50s while the story text itself is ready in about 10, so generate no
 // longer waits for them: it returns the text and leaves the pictures running here, to be picked
 // up by GET /api/stories/:id/images. Each finished scene is saved to disk right away (see
-// illustrationStore) and the job only holds its URL. The job itself is memory-only - a restart
-// loses an in-flight job, and the story keeps whatever scenes were saved before it.
+// illustrationStore) and the job only holds its URL; the story row records them once every scene
+// is in place. The job itself is memory-only - a restart mid-render leaves the story text-only.
 export interface ImageJob {
   status: 'pending' | 'done';
   images: (string | null)[];
@@ -82,7 +82,8 @@ const listFiguresForStoryStmt = db.prepare(
 );
 const deleteFigureStmt = db.prepare('DELETE FROM story_figures WHERE id = ? AND story_id = ?');
 const setGeneratedStmt = db.prepare(
-  "UPDATE stories SET status = 'generated', story_text = ?, title = ?, generated_at = ? WHERE id = ?"
+  // new text means the old pictures no longer belong to it
+  "UPDATE stories SET status = 'generated', story_text = ?, title = ?, generated_at = ?, images = NULL WHERE id = ?"
 );
 const recentGeneratedStmt = db.prepare(
   "SELECT story_text FROM stories WHERE status = 'generated' ORDER BY generated_at DESC LIMIT ?"

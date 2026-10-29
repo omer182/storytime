@@ -206,7 +206,7 @@ router.get('/stories/:id/images', (req: Request, res: Response) => {
  *         schema: { type: string, enum: [0.webp, 1.webp, 2.webp, cover.webp] }
  *     responses:
  *       200:
- *         description: The image (immutable - safe to cache forever)
+ *         description: The image (revalidated on each use - regenerating a story re-renders it at the same URL)
  *         content:
  *           image/webp: {}
  *       404: { description: No such illustration }
@@ -216,7 +216,7 @@ router.get('/stories/:id/images/:file', (req: Request, res: Response) => {
   if (!file) return res.status(404).json({ error: 'image not found' });
   res.sendFile(
     file,
-    { headers: { 'Content-Type': 'image/webp', 'Cache-Control': 'public, max-age=31536000, immutable' } },
+    { headers: { 'Content-Type': 'image/webp', 'Cache-Control': 'no-cache' } },
     (err) => {
       if (err && !res.headersSent) res.status(404).json({ error: 'image not found' });
     }
