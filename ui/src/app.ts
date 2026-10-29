@@ -911,7 +911,10 @@ document.querySelectorAll<HTMLButtonElement>('.nav-btn').forEach((btn) => {
     btn.classList.add('active');
     btn.setAttribute('aria-selected', 'true');
     byId(`tab-${btn.dataset.tab}`).classList.add('active');
-    if (btn.dataset.tab === 'history') loadHistory();
+    if (btn.dataset.tab === 'history') {
+      if (openHistoryId) closeHistoryStory(); // the tab itself is the way back to the list
+      loadHistory();
+    }
   });
 });
 
