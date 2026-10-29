@@ -45,14 +45,8 @@
         </div>
 
         <div id="active-story" class="hidden">
-          <div id="generated-story-wrap" class="hidden">
-            <div class="story-page">
-              <h2 id="generated-story-title" class="story-title"></h2>
-              <div class="story-ornament story-ornament-top" aria-hidden="true">❧</div>
-              <div id="generated-story" class="story-text"></div>
-              <div class="story-ornament story-ornament-bottom" aria-hidden="true">❧</div>
-            </div>
-            <ul id="story-figure-tags" class="figure-list readonly"></ul>
+          <div id="generated-story-wrap" class="reading-view hidden">
+            <div id="generated-story-page"></div>
             <button id="btn-restart-after" class="primary large">✦ סיפור חדש ✦</button>
           </div>
 
@@ -82,6 +76,10 @@
 
       <section id="tab-history" class="tab-panel" role="tabpanel" aria-labelledby="nav-history">
         <div id="history-list" class="history-grid"></div>
+        <div id="history-detail" class="reading-view hidden">
+          <button type="button" id="btn-history-back" class="text-btn back-btn">→ חזרה להיסטוריה</button>
+          <div id="history-story"></div>
+        </div>
       </section>
 
       <section id="tab-manage" class="tab-panel" role="tabpanel" aria-labelledby="nav-manage">

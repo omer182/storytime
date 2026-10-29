@@ -26,7 +26,8 @@ export interface Story {
   generatedAt: string | null;
   favorite: boolean;
   figures: StoryFigureEntry[];
-  // only present right after generating - never persisted, so a later GET won't have them
+  // URLs of the story's saved illustrations, in story order (null: that scene couldn't be drawn).
+  // Absent for a story without pictures, or while they are still rendering
   images?: (string | null)[];
   // true while the illustrations are still rendering server-side - the client polls
   // GET /stories/:id/images for them
@@ -43,6 +44,8 @@ export interface StorySummary {
   figureCount: number;
   figures: { name: string; category: Category }[];
   snippet: string | null;
+  // the story's opening illustration, sized for the history list - null when it has none
+  coverUrl: string | null;
 }
 
 export interface AddFigureResult {

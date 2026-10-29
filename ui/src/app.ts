@@ -61,9 +61,7 @@ const el = {
   noStory: byId<HTMLElement>('no-story'),
   activeStory: byId<HTMLElement>('active-story'),
   generatedWrap: byId<HTMLElement>('generated-story-wrap'),
-  generatedStoryTitle: byId<HTMLElement>('generated-story-title'),
-  generatedStory: byId<HTMLElement>('generated-story'),
-  storyFigureTags: byId<HTMLUListElement>('story-figure-tags'),
+  generatedStoryPage: byId<HTMLElement>('generated-story-page'),
   deckSection: byId<HTMLElement>('deck-section'),
   deck: byId<HTMLElement>('deck'),
   generateBar: byId<HTMLElement>('generate-bar'),
@@ -72,7 +70,11 @@ const el = {
   btnAbandon: byId<HTMLButtonElement>('btn-abandon'),
   btnRestartAfter: byId<HTMLButtonElement>('btn-restart-after'),
   btnGenerateLabel: byId<HTMLElement>('btn-generate-label'),
+  tabHistory: byId<HTMLElement>('tab-history'),
   historyList: byId<HTMLElement>('history-list'),
+  historyDetail: byId<HTMLElement>('history-detail'),
+  historyStory: byId<HTMLElement>('history-story'),
+  btnHistoryBack: byId<HTMLButtonElement>('btn-history-back'),
   toast: byId<HTMLElement>('toast'),
   manageList: byId<HTMLElement>('manage-list'),
   newFigureModal: byId<HTMLElement>('new-figure-modal'),
@@ -144,14 +146,44 @@ function illustrationElement(index: number, src: string | null): HTMLElement {
   return slot;
 }
 
-function renderGeneratedStory(
-  storyText: string,
-  title: string | null,
-  images?: (string | null)[],
-  pending?: boolean
-): void {
-  el.generatedStoryTitle.textContent = title || '';
-  el.generatedStory.innerHTML = '';
+type StoryPageContent = Pick<Story, 'title' | 'storyText' | 'images' | 'imagesPending' | 'figures'>;
+
+// the illustrated story page plus its cast - shared by the create tab's freshly generated story
+// and a story opened from history
+function renderStoryPage(target: HTMLElement, story: StoryPageContent): void {
+  target.innerHTML = '';
+  const page = document.createElement('div');
+  page.className = 'story-page';
+  const titleEl = document.createElement('h2');
+  titleEl.className = 'story-title';
+  titleEl.textContent = story.title || '';
+  const storyEl = document.createElement('div');
+  storyEl.className = 'story-text';
+  const ornament = (position: 'top' | 'bottom') => {
+    const div = document.createElement('div');
+    div.className = `story-ornament story-ornament-${position}`;
+    div.setAttribute('aria-hidden', 'true');
+    div.textContent = '❧';
+    return div;
+  };
+  page.append(titleEl, ornament('top'), storyEl, ornament('bottom'));
+  target.appendChild(page);
+
+  const tags = document.createElement('ul');
+  tags.className = 'figure-list readonly';
+  story.figures.forEach((f) => {
+    const li = document.createElement('li');
+    li.dataset.cat = f.category;
+    const nameSpan = document.createElement('span');
+    nameSpan.textContent = f.name;
+    li.appendChild(nameSpan);
+    tags.appendChild(li);
+  });
+  target.appendChild(tags);
+
+  const storyText = story.storyText || '';
+  const images = story.images;
+  const pending = story.imagesPending;
 
   // paragraphs are separated by blank lines, but a paragraph can hold single line breaks of its
   // own - gpt-4.1 puts each line of dialogue on its own line, and .story-text renders those with
@@ -173,25 +205,25 @@ function renderGeneratedStory(
   const showsSlot = (i: number) => Boolean(imageAt(i)) || Boolean(pending);
   const middleIndex = Math.floor((paragraphs.length - 1) / 2);
 
-  if (showsSlot(0)) el.generatedStory.appendChild(illustrationElement(0, imageAt(0)));
+  if (showsSlot(0)) storyEl.appendChild(illustrationElement(0, imageAt(0)));
 
   paragraphs.forEach((text, i) => {
     const p = document.createElement('p');
     p.textContent = text;
-    el.generatedStory.appendChild(p);
+    storyEl.appendChild(p);
     if (i === middleIndex && showsSlot(1)) {
-      el.generatedStory.appendChild(illustrationElement(1, imageAt(1)));
+      storyEl.appendChild(illustrationElement(1, imageAt(1)));
     }
   });
 
-  if (showsSlot(2)) el.generatedStory.appendChild(illustrationElement(2, imageAt(2)));
+  if (showsSlot(2)) storyEl.appendChild(illustrationElement(2, imageAt(2)));
 }
 
 // Swaps in the pictures that have arrived without rebuilding the story around them, so the text
 // the reader is looking at doesn't jump. Once done, any placeholder still empty is a scene that
 // couldn't be drawn, and is dropped.
-function applyIllustrations(images: (string | null)[], done: boolean): void {
-  el.generatedStory
+function applyIllustrations(target: HTMLElement, images: (string | null)[], done: boolean): void {
+  target
     .querySelectorAll<HTMLElement>('.story-illustration-pending')
     .forEach((slot) => {
       const index = Number(slot.dataset.slot);
@@ -215,25 +247,10 @@ function renderStory(): void {
   const isGenerated = currentStory.status === 'generated';
 
   if (isGenerated && currentStory.storyText) {
-    renderGeneratedStory(
-      currentStory.storyText,
-      currentStory.title,
-      currentStory.images,
-      currentStory.imagesPending
-    );
+    renderStoryPage(el.generatedStoryPage, currentStory);
     el.generatedWrap.classList.remove('hidden');
     el.deckSection.classList.add('hidden');
     el.generateBar.classList.add('hidden');
-
-    el.storyFigureTags.innerHTML = '';
-    currentStory.figures.forEach((f) => {
-      const li = document.createElement('li');
-      li.dataset.cat = f.category;
-      const nameSpan = document.createElement('span');
-      nameSpan.textContent = f.name;
-      li.appendChild(nameSpan);
-      el.storyFigureTags.appendChild(li);
-    });
   } else {
     el.generatedWrap.classList.add('hidden');
     el.deckSection.classList.remove('hidden');
@@ -702,7 +719,7 @@ function pollIllustrations(storyId: string): void {
       currentStory.images = images;
       currentStory.imagesPending = false;
     }
-    applyIllustrations(images, true);
+    applyIllustrations(el.generatedStoryPage, images, true);
   };
 
   const tick = async (): Promise<void> => {
@@ -718,7 +735,7 @@ function pollIllustrations(storyId: string): void {
       if (res.status === 'done') return finish(res.images);
 
       if (currentStory) currentStory.images = res.images;
-      applyIllustrations(res.images, false);
+      applyIllustrations(el.generatedStoryPage, res.images, false);
     } catch {
       // a failed poll is not fatal - the next tick tries again
     }
@@ -777,19 +794,40 @@ async function loadHistory(): Promise<void> {
     return;
   }
   stories.forEach((s) => {
-    const div = document.createElement('div');
-    div.className = 'history-item';
+    const card = document.createElement('article');
+    card.className = 'history-item';
+    card.dataset.id = s.id;
     const date = new Date(s.createdAt).toLocaleString('he-IL');
     const statusLabel = STATUS_LABELS[s.status] || s.status;
     const heading = s.title || `${statusLabel} · ${s.figureCount} דמויות`;
-    div.innerHTML = `
+
+    if (s.coverUrl) {
+      const cover = document.createElement('img');
+      cover.className = 'history-cover';
+      cover.src = s.coverUrl;
+      cover.alt = '';
+      cover.loading = 'lazy';
+      card.appendChild(cover);
+    }
+
+    const body = document.createElement('div');
+    body.className = 'history-item-body';
+    body.innerHTML = `
       <div class="history-item-head">
-        <h3>${heading}</h3>
+        <h3><button type="button" class="history-open"></button></h3>
         <button type="button" class="favorite-btn" aria-label="סמן כמועדף">${s.favorite ? '★' : '☆'}</button>
       </div>
       <div class="muted">${date}</div>
-      ${s.snippet ? `<p class="muted">${s.snippet}…</p>` : ''}
     `;
+    // the title button is what opens the story - its ::after stretches over the whole card,
+    // so the card is one big tap target while keyboard users get a real button
+    body.querySelector('.history-open')!.textContent = heading;
+    if (s.snippet) {
+      const snippet = document.createElement('p');
+      snippet.className = 'muted';
+      snippet.textContent = `${s.snippet}…`;
+      body.appendChild(snippet);
+    }
 
     if (s.figures.length > 0) {
       const tagList = document.createElement('ul');
@@ -802,20 +840,16 @@ async function loadHistory(): Promise<void> {
         li.appendChild(nameSpan);
         tagList.appendChild(li);
       });
-      div.appendChild(tagList);
+      body.appendChild(tagList);
     }
+    card.appendChild(body);
 
-    const favoriteBtn = div.querySelector<HTMLButtonElement>('.favorite-btn')!;
+    const favoriteBtn = body.querySelector<HTMLButtonElement>('.favorite-btn')!;
     favoriteBtn.classList.toggle('active', s.favorite);
-    favoriteBtn.addEventListener('click', (event) => {
-      event.stopPropagation();
-      toggleFavorite(s.id, !s.favorite);
-    });
+    favoriteBtn.addEventListener('click', () => toggleFavorite(s.id, !s.favorite));
 
-    if (s.status === 'generated') {
-      div.addEventListener('click', () => toggleHistoryStory(div, s.id));
-    }
-    el.historyList.appendChild(div);
+    body.querySelector('.history-open')!.addEventListener('click', () => openHistoryStory(s.id));
+    el.historyList.appendChild(card);
   });
 }
 
@@ -831,23 +865,40 @@ async function toggleFavorite(storyId: string, favorite: boolean): Promise<void>
   }
 }
 
-async function toggleHistoryStory(container: HTMLElement, storyId: string): Promise<void> {
-  const existing = container.querySelector('.story-text');
-  if (existing) {
-    existing.remove();
-    container.classList.remove('expanded');
-    return;
-  }
+// a story opened from history is shown in place of the list, inside the History tab - it never
+// touches currentStory, so a story half-built on the create tab is left exactly as it was
+let openHistoryId: string | null = null;
+let historyListScrollTop = 0;
+
+async function openHistoryStory(id: string): Promise<void> {
+  let story: Story;
   try {
-    const story = await api<Story>(`/stories/${storyId}`);
-    const textDiv = document.createElement('div');
-    textDiv.className = 'story-text';
-    textDiv.textContent = story.storyText || '';
-    container.appendChild(textDiv);
-    container.classList.add('expanded');
+    story = await api<Story>(`/stories/${id}`);
   } catch (err) {
     showToast((err as Error).message);
+    return;
   }
+  openHistoryId = id;
+  historyListScrollTop = el.tabHistory.scrollTop;
+  renderStoryPage(el.historyStory, story);
+  el.historyList.classList.add('hidden');
+  el.historyDetail.classList.remove('hidden');
+  el.tabHistory.scrollTop = 0;
+  el.btnHistoryBack.focus();
+}
+
+function closeHistoryStory(): void {
+  el.historyDetail.classList.add('hidden');
+  el.historyList.classList.remove('hidden');
+  el.historyStory.innerHTML = '';
+  el.tabHistory.scrollTop = historyListScrollTop;
+  // looked up by id rather than kept as a node - the list may have been rebuilt meanwhile
+  if (openHistoryId) {
+    el.historyList
+      .querySelector<HTMLElement>(`.history-item[data-id="${CSS.escape(openHistoryId)}"] .history-open`)
+      ?.focus({ preventScroll: true });
+  }
+  openHistoryId = null;
 }
 
 document.querySelectorAll<HTMLButtonElement>('.nav-btn').forEach((btn) => {
@@ -869,6 +920,7 @@ el.btnAbandon.addEventListener('click', abandonStory);
 el.btnRestartAfter.addEventListener('click', abandonStory);
 el.btnGenerate.addEventListener('click', generateStory);
 el.btnAddFigure.addEventListener('click', openNewFigureModal);
+el.btnHistoryBack.addEventListener('click', closeHistoryStory);
 el.newFigureForm.addEventListener('submit', submitNewFigure);
 el.btnCancelNewFigure.addEventListener('click', closeNewFigureModal);
 el.newFigureModal.addEventListener('click', (event) => {
