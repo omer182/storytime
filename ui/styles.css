@@ -877,6 +877,9 @@ button.text-btn {
   width: 100%;
 }
 
+/* Create/Cancel act on the create form - other tabs don't offer to cancel a story you can't see */
+.app-shell:not(:has(#tab-create.active)) .generate-bar { display: none; }
+
 .generate-bar #btn-abandon {
   flex: 0 0 auto;
   width: auto;
