@@ -1399,10 +1399,13 @@ button.text-btn {
 }
 
 /* wide screens: title + tabs share the header, content gets real width */
-@media (min-width: 900px) {
+@media (min-width: 640px) {
+  /* the toast lives outside the shell and sits under the header, so both read this */
+  :root { --header-h: 64px; }
+
   .app-shell {
     grid-template-columns: auto 1fr;
-    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-rows: var(--header-h) minmax(0, 1fr) auto;
     grid-template-areas:
       "title nav"
       "main main"
@@ -1417,7 +1420,9 @@ button.text-btn {
 
   .topbar {
     grid-area: title;
-    padding: 14px 32px;
+    display: flex;
+    align-items: center;
+    padding: 0 32px;
   }
 
   .topbar h1 {
@@ -1489,6 +1494,14 @@ button.text-btn {
 
   .history-grid .history-item.expanded { grid-column: 1 / -1; }
 
+  /* an expanded card spans the row - keep its text at reading width */
+  .history-grid .history-item.expanded .story-text {
+    max-width: var(--reading-max);
+    margin-inline: auto;
+  }
+
+  .history-grid .empty-hint { grid-column: 1 / -1; }
+
   .generate-bar {
     grid-area: generate;
     max-width: var(--content-max);
@@ -1497,7 +1510,7 @@ button.text-btn {
 
   /* the footer holds the main action here, so toasts drop in under the header instead */
   .toast {
-    top: 84px;
+    top: calc(var(--header-h) + 12px);
     bottom: auto;
   }
 }

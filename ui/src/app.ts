@@ -206,7 +206,6 @@ function applyIllustrations(images: (string | null)[], done: boolean): void {
 }
 
 function renderStory(): void {
-
   if (!currentStory) {
     el.noStory.classList.remove('hidden');
     el.activeStory.classList.add('hidden');
