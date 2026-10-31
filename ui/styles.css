@@ -452,31 +452,6 @@ button.text-btn {
   }
 }
 
-/* status + gate */
-.status-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 4px 0 10px;
-}
-
-.badge {
-  display: inline-block;
-  padding: 4px 11px;
-  border-radius: 999px;
-  font-size: 0.74rem;
-  font-weight: 600;
-  background: var(--surface-sunken);
-  color: var(--ink);
-  border: 1px solid var(--border);
-}
-
-.badge.generated {
-  background: var(--primary-soft);
-  color: var(--primary);
-  border-color: var(--primary);
-}
-
 .muted {
   color: var(--muted);
   font-size: 0.78rem;
@@ -1550,7 +1525,7 @@ button.text-btn {
     gap: 24px;
   }
 
-  .options-row { border-bottom: none; }
+  #deck > .deck-group:last-child { border-bottom: none; }
 
   /* the footer holds the main action here, so toasts drop in under the header instead */
   .toast {

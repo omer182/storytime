@@ -60,8 +60,6 @@ function byId<T extends HTMLElement>(id: string): T {
 const el = {
   noStory: byId<HTMLElement>('no-story'),
   activeStory: byId<HTMLElement>('active-story'),
-  statusRow: byId<HTMLElement>('status-row'),
-  storyStatus: byId<HTMLElement>('story-status'),
   generatedWrap: byId<HTMLElement>('generated-story-wrap'),
   generatedStoryTitle: byId<HTMLElement>('generated-story-title'),
   generatedStory: byId<HTMLElement>('generated-story'),
@@ -215,10 +213,6 @@ function renderStory(): void {
   el.activeStory.classList.remove('hidden');
 
   const isGenerated = currentStory.status === 'generated';
-
-  el.statusRow.classList.toggle('hidden', isGenerated);
-  el.storyStatus.textContent = STATUS_LABELS[currentStory.status] || currentStory.status;
-  el.storyStatus.className = 'badge';
 
   if (isGenerated && currentStory.storyText) {
     renderGeneratedStory(
