@@ -60,10 +60,6 @@ function byId<T extends HTMLElement>(id: string): T {
 const el = {
   noStory: byId<HTMLElement>('no-story'),
   activeStory: byId<HTMLElement>('active-story'),
-  statusRow: byId<HTMLElement>('status-row'),
-  storyStatus: byId<HTMLElement>('story-status'),
-  gateProgress: byId<HTMLElement>('gate-progress'),
-  addedFigures: byId<HTMLUListElement>('added-figures'),
   generatedWrap: byId<HTMLElement>('generated-story-wrap'),
   generatedStoryTitle: byId<HTMLElement>('generated-story-title'),
   generatedStory: byId<HTMLElement>('generated-story'),
@@ -218,33 +214,6 @@ function renderStory(): void {
 
   const isGenerated = currentStory.status === 'generated';
 
-  el.statusRow.classList.toggle('hidden', isGenerated);
-  el.storyStatus.textContent = STATUS_LABELS[currentStory.status] || currentStory.status;
-  el.storyStatus.className = 'badge';
-
-  const present = new Set(currentStory.figures.map((f) => f.category));
-  el.gateProgress.querySelectorAll<HTMLElement>('.gate-pill').forEach((pill) => {
-    pill.classList.toggle('done', present.has(pill.dataset.cat as Category));
-  });
-  el.gateProgress.classList.toggle('hidden', isGenerated);
-
-  el.addedFigures.classList.toggle('hidden', isGenerated);
-  el.addedFigures.innerHTML = '';
-  currentStory.figures.forEach((f) => {
-    const li = document.createElement('li');
-    li.dataset.cat = f.category;
-    const nameSpan = document.createElement('span');
-    nameSpan.textContent = f.name;
-    li.appendChild(nameSpan);
-    const removeBtn = document.createElement('button');
-    removeBtn.textContent = '✕';
-    removeBtn.title = 'הסר';
-    removeBtn.setAttribute('aria-label', `הסר את ${f.name}`);
-    removeBtn.addEventListener('click', () => removeFigure(f.entryId));
-    li.appendChild(removeBtn);
-    el.addedFigures.appendChild(li);
-  });
-
   if (isGenerated && currentStory.storyText) {
     renderGeneratedStory(
       currentStory.storyText,
@@ -270,49 +239,13 @@ function renderStory(): void {
     el.deckSection.classList.remove('hidden');
     el.generateBar.classList.remove('hidden');
     el.btnGenerate.disabled = missingCategories(currentStory.figures).length > 0;
-    renderDeck();
+    syncDeckSelection();
   }
 }
 
-const DRAG_THRESHOLD = 5; // px of pointer movement before a mouse drag counts as scrolling, not a click
-
-function enableDragScroll(row: HTMLElement): void {
-  let startX = 0;
-  let startScrollLeft = 0;
-  let dragging = false;
-
-  // move/up listen on window (not the row, and no setPointerCapture) so the drag keeps
-  // tracking even if the cursor leaves the row - setPointerCapture on a scrollable element
-  // combined with programmatic scrollLeft writes causes some browsers to snap the scroll
-  // position back to where it started once the pointer is released
-  function onMove(event: PointerEvent): void {
-    const dx = event.clientX - startX;
-    if (!dragging && Math.abs(dx) > DRAG_THRESHOLD) {
-      dragging = true;
-      row.classList.add('dragging');
-    }
-    // content should follow the cursor (grab-and-drag), so scrollLeft moves opposite dx
-    if (dragging) row.scrollLeft = startScrollLeft - dx;
-  }
-
-  function onUp(): void {
-    window.removeEventListener('pointermove', onMove);
-    window.removeEventListener('pointerup', onUp);
-    row.classList.remove('dragging');
-    dragging = false;
-  }
-
-  row.addEventListener('pointerdown', (event) => {
-    if (event.pointerType !== 'mouse') return; // touch/pen already scroll natively
-    startX = event.clientX;
-    startScrollLeft = row.scrollLeft;
-    dragging = false;
-    window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerup', onUp);
-  });
-}
-
-function renderDeck(): void {
+// the deck's DOM is built once per loadDeck() and only its selection state is synced
+// afterwards, so picking a figure never rebuilds (or re-scrolls) the controls
+function buildDeck(): void {
   el.deck.innerHTML = '';
   const groups: Partial<Record<Category, Figure[]>> = {};
   deck.forEach((f) => {
@@ -328,44 +261,92 @@ function renderDeck(): void {
     const label = document.createElement('div');
     label.className = 'deck-group-label';
     label.textContent = CATEGORY_LABELS[cat] || cat;
+    if (!REQUIRED_CATEGORIES.includes(cat)) {
+      const optional = document.createElement('span');
+      optional.className = 'deck-group-optional';
+      optional.textContent = '(לא חובה)';
+      label.appendChild(optional);
+    }
     group.appendChild(label);
 
+    const controls = document.createElement('div');
+    controls.className = 'deck-group-controls';
+    group.appendChild(controls);
+
     if (PICKER_CATEGORIES.includes(cat)) {
-      const selectedCount = (currentStory?.figures || []).filter((f) => f.category === cat).length;
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'token-btn picker-trigger';
       btn.innerHTML = `<span>${CATEGORY_EMOJI[cat]} בחרו ${CATEGORY_LABELS[cat]}</span>`;
-      if (selectedCount > 0) {
-        const countSpan = document.createElement('span');
-        countSpan.className = 'picker-trigger-count';
-        countSpan.textContent = `${selectedCount} נבחרו`;
-        btn.appendChild(countSpan);
-      }
+      const countSpan = document.createElement('span');
+      countSpan.className = 'picker-trigger-count';
+      btn.appendChild(countSpan);
       btn.addEventListener('click', () => openFigurePickerModal(cat));
-      group.appendChild(btn);
+      controls.appendChild(btn);
+      const chips = document.createElement('ul');
+      chips.className = 'figure-list category-chips';
+      controls.appendChild(chips);
     } else {
+      // all options visible as toggle chips - the chip itself shows whether it's picked
       const row = document.createElement('div');
-      row.className = 'deck-row';
+      row.className = 'toggle-chips';
+      row.setAttribute('role', 'group');
+      row.setAttribute('aria-label', CATEGORY_LABELS[cat]);
       groups[cat]!.forEach((figure) => {
         const btn = document.createElement('button');
-        btn.className = 'token-btn';
-        btn.textContent = figure.name;
-        btn.setAttribute('aria-label', `הוסף את ${figure.name} (${CATEGORY_LABELS[cat]})`);
-        btn.addEventListener('click', () => addFigureToStory(figure.uid));
+        btn.type = 'button';
+        btn.className = 'toggle-chip';
+        btn.dataset.uid = figure.uid;
+        btn.dataset.name = figure.name;
+        btn.addEventListener('click', () => toggleMood(figure.uid));
         row.appendChild(btn);
       });
-      enableDragScroll(row);
-      group.appendChild(row);
+      controls.appendChild(row);
     }
 
     el.deck.appendChild(group);
+  });
+  syncDeckSelection();
+}
+
+function syncDeckSelection(): void {
+  const figures = currentStory?.figures || [];
+  el.deck.querySelectorAll<HTMLElement>('.deck-group').forEach((group) => {
+    const picked = figures.filter((f) => f.category === group.dataset.cat);
+
+    const count = group.querySelector<HTMLElement>('.picker-trigger-count');
+    if (count) count.textContent = picked.length > 0 ? `${picked.length} נבחרו` : '';
+
+    group.querySelectorAll<HTMLButtonElement>('.toggle-chip').forEach((btn) => {
+      const isPicked = picked.some((f) => f.uid === btn.dataset.uid);
+      btn.setAttribute('aria-pressed', String(isPicked));
+      btn.textContent = isPicked ? `✓ ${btn.dataset.name}` : btn.dataset.name!;
+    });
+
+    const chips = group.querySelector<HTMLUListElement>('.category-chips');
+    if (!chips) return;
+    chips.innerHTML = '';
+    picked.forEach((f) => {
+      const li = document.createElement('li');
+      li.dataset.cat = f.category;
+      const nameSpan = document.createElement('span');
+      nameSpan.textContent = f.name;
+      li.appendChild(nameSpan);
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.textContent = '✕';
+      removeBtn.title = 'הסר';
+      removeBtn.setAttribute('aria-label', `הסר את ${f.name}`);
+      removeBtn.addEventListener('click', () => removeFigure(f.entryId));
+      li.appendChild(removeBtn);
+      chips.appendChild(li);
+    });
   });
 }
 
 async function loadDeck(): Promise<void> {
   deck = await api<Figure[]>('/figures');
-  renderDeck();
+  buildDeck();
   renderManageList();
 }
 
@@ -637,10 +618,27 @@ async function addFigureToStory(uid: string): Promise<void> {
       return;
     }
     currentStory.figures = result.figures!;
-    showToast(`נוסף: ${result.figure!.name}`);
     renderStory();
   } catch (err) {
     showToast((err as Error).message);
+  }
+}
+
+// uids with an add/remove request in flight - a fast double tap must not add a mood twice
+const moodRequestsInFlight = new Set<string>();
+
+async function toggleMood(uid: string): Promise<void> {
+  if (!currentStory || moodRequestsInFlight.has(uid)) return;
+  const chip = el.deck.querySelector<HTMLElement>(`.toggle-chip[data-uid="${CSS.escape(uid)}"]`);
+  moodRequestsInFlight.add(uid);
+  chip?.setAttribute('aria-busy', 'true');
+  try {
+    const entry = currentStory.figures.find((f) => f.uid === uid);
+    if (entry) await removeFigure(entry.entryId);
+    else await addFigureToStory(uid);
+  } finally {
+    moodRequestsInFlight.delete(uid);
+    chip?.removeAttribute('aria-busy');
   }
 }
 
