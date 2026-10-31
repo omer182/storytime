@@ -206,8 +206,6 @@ function applyIllustrations(images: (string | null)[], done: boolean): void {
 }
 
 function renderStory(): void {
-  document.querySelector('main')?.classList.toggle('no-scroll', !currentStory);
-
   if (!currentStory) {
     el.noStory.classList.remove('hidden');
     el.activeStory.classList.add('hidden');
@@ -750,7 +748,7 @@ async function generateStory(): Promise<void> {
       body: JSON.stringify({ length, generateImages }),
     });
     renderStory();
-    document.querySelector('main')?.scrollTo({ top: 0 });
+    byId('tab-create').scrollTo({ top: 0 });
     if (currentStory.imagesPending) pollIllustrations(currentStory.id);
   } catch (err) {
     if (err instanceof ApiError && err.status === 422) {
@@ -839,6 +837,7 @@ async function toggleHistoryStory(container: HTMLElement, storyId: string): Prom
   const existing = container.querySelector('.story-text');
   if (existing) {
     existing.remove();
+    container.classList.remove('expanded');
     return;
   }
   try {
@@ -847,6 +846,7 @@ async function toggleHistoryStory(container: HTMLElement, storyId: string): Prom
     textDiv.className = 'story-text';
     textDiv.textContent = story.storyText || '';
     container.appendChild(textDiv);
+    container.classList.add('expanded');
   } catch (err) {
     showToast((err as Error).message);
   }
@@ -892,18 +892,6 @@ async function loadVersion(): Promise<void> {
     // purely cosmetic - fine to leave blank if this fails
   }
 }
-
-// percentage/inset height on #no-story doesn't reliably resolve against main's
-// flex-computed height in every browser (main has overflow-y:auto + a flex-derived
-// height, not an explicit one) - an explicit pixel height always works, so set it directly.
-// A ResizeObserver (not just a window resize listener) catches every reason main's box can
-// change size - mobile address-bar collapse/expand, orientation change, font load reflow -
-// so #no-story never drifts out of sync and never leaves main scrollable.
-const mainEl = document.querySelector('main') as HTMLElement;
-const emptyStateResizeObserver = new ResizeObserver(() => {
-  el.noStory.style.height = `${mainEl.clientHeight}px`;
-});
-emptyStateResizeObserver.observe(mainEl);
 
 loadDeck();
 loadVersion();

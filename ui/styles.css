@@ -27,6 +27,11 @@
   --cat-mood: #a374a8;
   --cat-object: #c2a34a;
 
+  /* content widths on wide screens */
+  --content-max: 920px;
+  --reading-max: 760px;
+  --history-max: 1200px;
+
   --radius: 16px;
   --radius-sm: 10px;
   --shadow: 0 3px 14px rgba(0, 0, 0, 0.45);
@@ -40,13 +45,31 @@
 
 * { box-sizing: border-box; }
 
-/* no visible scrollbars anywhere - scrolling is by touch gesture, wheel, or drag */
+/* no visible scrollbars on touch screens - scrolling is by gesture */
 * {
   scrollbar-width: none;
 }
 
 *::-webkit-scrollbar {
   display: none;
+}
+
+/* mouse users get a thin scrollbar, so they can see a list is scrollable */
+@media (hover: hover) and (pointer: fine) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--gold-line) transparent;
+  }
+
+  *::-webkit-scrollbar {
+    display: block;
+    width: 8px;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: var(--gold-line);
+    border-radius: 4px;
+  }
 }
 
 :focus-visible {
@@ -71,6 +94,7 @@ button:focus-visible {
 html, body {
   margin: 0;
   height: 100%;
+  overflow: hidden;
   color: var(--ink);
   overscroll-behavior: none;
 }
@@ -84,12 +108,12 @@ body {
 
 .hidden { display: none !important; }
 
-/* fixed app-shell: header + nav/CTA always on screen, only the middle scrolls if it must */
+/* fixed app-shell: header + nav/CTA always on screen, only the active tab panel scrolls */
 .app-shell {
   position: relative;
   height: 100dvh;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
   overflow: hidden;
   background:
     radial-gradient(rgba(212, 162, 74, 0.06) 0.5px, transparent 0.5px) 0 0 / 14px 14px,
@@ -143,27 +167,33 @@ body {
 
 main {
   position: relative;
-  flex: 1 1 auto;
   min-height: 0;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  padding: 4px 18px 10px;
-  max-width: 560px;
-  width: 100%;
-  margin: 0 auto;
-}
-
-/* the empty-state hero is sized to fill main exactly - no scrolling should ever be
-   possible there, so disable it outright as a backstop against any residual sub-pixel
-   overflow instead of chasing pixel-perfect alignment */
-main.no-scroll {
   overflow: hidden;
 }
 
+/* each tab panel is its own scroll container, so one tab's state can never block
+   another tab's scrolling, and every tab keeps its own scroll position */
 .tab-panel { display: none; }
 .tab-panel.active {
   display: block;
+  height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 4px 18px 10px;
   animation: panel-fade-in 0.28s ease both;
+}
+
+.tab-panel > * {
+  max-width: 524px;
+  margin-inline: auto;
+}
+
+/* the empty state fills the create panel exactly, so its hero can grow into the space left */
+#tab-create.active:has(> #no-story:not(.hidden)) {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 0;
 }
 
 @keyframes panel-fade-in {
@@ -178,13 +208,12 @@ main h2 {
   letter-spacing: 0.01em;
 }
 
-/* empty state - absolutely positioned to fill main's box exactly, so the hero image
-   below can flex-grow into the real remaining space and touch the bottom nav */
+/* empty state - flex-grows to fill the create panel, so the hero image below can
+   flex-grow into the real remaining space and touch the bottom nav */
 .empty-state {
-  position: absolute;
-  inset: 0;
+  flex: 1 1 auto;
   width: 100%;
-  height: 100%;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -264,9 +293,9 @@ main h2 {
   flex: 1 1 0;
   align-self: stretch;
   min-height: 100px;
-  /* bleed past .empty-state's own side padding (20px) and main's padding (18px sides,
-     10px bottom) so the photo touches the screen edges and the bottom nav */
-  margin: 14px -38px 4px;
+  /* bleed past .empty-state's own side padding (20px) and the panel's side padding
+     (18px) so the photo touches the screen edges and the bottom nav */
+  margin: 14px -38px 0;
   /* only the top edge fades into the page - sides and bottom are true cut edges */
   -webkit-mask-image: linear-gradient(to bottom, transparent 0, black 70px);
   mask-image: linear-gradient(to bottom, transparent 0, black 70px);
@@ -1369,33 +1398,119 @@ button.text-btn {
   flex-shrink: 0;
 }
 
-/* wider screens: keep the mobile layout centered, framed like a book on a table */
+/* wide screens: title + tabs share the header, content gets real width */
 @media (min-width: 640px) {
+  /* the toast lives outside the shell and sits under the header, so both read this */
+  :root { --header-h: 64px; }
+
   .app-shell {
-    max-width: 560px;
-    margin: 24px auto;
-    height: calc(100dvh - 48px);
-    border-radius: 18px;
-    box-shadow:
-      0 0 0 1px var(--gold-line),
-      0 20px 60px rgba(0, 0, 0, 0.45);
-    position: relative;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: var(--header-h) minmax(0, 1fr) auto;
+    grid-template-areas:
+      "title nav"
+      "main main"
+      "generate generate";
   }
 
-  .topbar { border-radius: 18px 18px 0 0; }
-
-  .app-shell::before,
-  .app-shell::after {
-    content: "❦";
-    position: absolute;
-    top: 8px;
-    color: var(--gold);
-    opacity: 0.55;
-    font-size: 0.85rem;
-    pointer-events: none;
-    z-index: 1;
+  .topbar,
+  .bottom-nav {
+    background: var(--surface);
+    border-bottom: 1px solid var(--gold-line);
   }
 
-  .app-shell::before { right: 14px; }
-  .app-shell::after { left: 14px; transform: scaleX(-1); }
+  .topbar {
+    grid-area: title;
+    display: flex;
+    align-items: center;
+    padding: 0 32px;
+  }
+
+  .topbar h1 {
+    justify-content: flex-start;
+    font-size: 1.8rem;
+  }
+
+  .title-flourish { display: none; }
+
+  /* full-width pill buttons look stretched on a wide page */
+  #btn-new-story,
+  #btn-restart-after,
+  #btn-add-figure {
+    display: block;
+    width: auto;
+    min-width: 320px;
+    margin-inline: auto;
+  }
+
+  main { grid-area: main; }
+
+  .bottom-nav {
+    grid-area: nav;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 4px;
+    padding: 0 32px;
+    border-top: none;
+  }
+
+  .nav-btn {
+    flex: 0 0 auto;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    height: 44px;
+    padding: 0 18px;
+    border-radius: 999px;
+  }
+
+  .nav-btn span { font-size: 0.95rem; }
+
+  .nav-btn.active { background: var(--gold-soft); }
+
+  .nav-btn.active::after { display: none; }
+
+  .tab-panel.active { padding: 28px 32px; }
+
+  #tab-create > *,
+  #tab-manage > * { max-width: var(--content-max); }
+
+  #tab-history > * { max-width: var(--history-max); }
+
+  #generated-story-wrap {
+    max-width: var(--reading-max);
+    margin-inline: auto;
+  }
+
+  #generated-story-wrap .story-text { font-size: 1.3rem; }
+
+  .history-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 20px;
+    align-items: start;
+  }
+
+  .history-grid .history-item { margin: 0; }
+
+  .history-grid .history-item.expanded { grid-column: 1 / -1; }
+
+  /* an expanded card spans the row - keep its text at reading width */
+  .history-grid .history-item.expanded .story-text {
+    max-width: var(--reading-max);
+    margin-inline: auto;
+  }
+
+  .history-grid .empty-hint { grid-column: 1 / -1; }
+
+  .generate-bar {
+    grid-area: generate;
+    max-width: var(--content-max);
+    padding: 12px 32px;
+  }
+
+  /* the footer holds the main action here, so toasts drop in under the header instead */
+  .toast {
+    top: calc(var(--header-h) + 12px);
+    bottom: auto;
+  }
 }
