@@ -45,18 +45,6 @@
         </div>
 
         <div id="active-story" class="hidden">
-          <div id="status-row" class="status-row">
-            <span id="story-status" class="badge"></span>
-          </div>
-
-          <div id="gate-progress" class="gate-progress">
-            <span class="gate-pill" data-cat="character">דמות</span>
-            <span class="gate-pill" data-cat="location">מקום</span>
-            <span class="gate-pill" data-cat="mood">מצב רוח</span>
-          </div>
-
-          <ul id="added-figures" class="figure-list"></ul>
-
           <div id="generated-story-wrap" class="hidden">
             <div class="story-page">
               <h2 id="generated-story-title" class="story-title"></h2>
@@ -69,26 +57,25 @@
           </div>
 
           <div id="deck-section">
-            <div id="story-options" class="story-options">
-              <div class="option-row">
-                <span class="option-label">אורך הסיפור</span>
+            <div id="story-options" class="deck-group options-row">
+              <div class="deck-group-label">אורך הסיפור</div>
+              <div class="deck-group-controls">
                 <div id="length-segmented" class="segmented" role="radiogroup" aria-label="אורך הסיפור">
                   <button type="button" class="segmented-btn" data-length="short">קצר</button>
                   <button type="button" class="segmented-btn active" data-length="medium">בינוני</button>
                   <button type="button" class="segmented-btn" data-length="long">ארוך</button>
                 </div>
+                <label class="option-toggle">
+                  <span class="option-label">כולל תמונות <span class="title-spark" aria-hidden="true">✦</span></span>
+                  <span class="switch">
+                    <input type="checkbox" id="include-images" autocomplete="off" />
+                    <span class="switch-track" aria-hidden="true"></span>
+                  </span>
+                </label>
               </div>
-              <label class="option-row option-toggle">
-                <span class="option-label">כולל תמונות <span class="title-spark" aria-hidden="true">✦</span></span>
-                <span class="switch">
-                  <input type="checkbox" id="include-images" autocomplete="off" />
-                  <span class="switch-track" aria-hidden="true"></span>
-                </span>
-              </label>
             </div>
 
             <div id="deck"></div>
-            <button id="btn-abandon" class="text-btn">בטל סיפור זה</button>
           </div>
         </div>
       </section>
@@ -106,6 +93,7 @@
     </main>
 
     <div id="generate-bar" class="generate-bar hidden">
+      <button id="btn-abandon" class="text-btn">בטל סיפור זה</button>
       <button id="btn-generate" class="primary large" disabled>
         <span class="btn-spinner" aria-hidden="true"></span>
         <span class="btn-icon" aria-hidden="true">📖</span>

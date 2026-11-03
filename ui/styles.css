@@ -452,70 +452,9 @@ button.text-btn {
   }
 }
 
-/* status + gate */
-.status-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 4px 0 10px;
-}
-
-.badge {
-  display: inline-block;
-  padding: 4px 11px;
-  border-radius: 999px;
-  font-size: 0.74rem;
-  font-weight: 600;
-  background: var(--surface-sunken);
-  color: var(--ink);
-  border: 1px solid var(--border);
-}
-
-.badge.generated {
-  background: var(--primary-soft);
-  color: var(--primary);
-  border-color: var(--primary);
-}
-
 .muted {
   color: var(--muted);
   font-size: 0.78rem;
-}
-
-.gate-progress {
-  display: flex;
-  gap: 6px;
-  margin-bottom: 12px;
-}
-
-.gate-pill {
-  flex: 1;
-  text-align: center;
-  padding: 6px 4px;
-  border-radius: 999px;
-  font-size: 0.74rem;
-  background: var(--surface-sunken);
-  color: var(--muted);
-  border: 1px solid var(--border);
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
-}
-
-.gate-pill.done {
-  background: var(--gold-soft);
-  color: var(--gold);
-  border-color: var(--gold);
-  font-weight: 600;
-  animation: pill-pop 0.28s ease;
-}
-
-.gate-pill.done::before {
-  content: "✓ ";
-}
-
-@keyframes pill-pop {
-  0% { transform: scale(0.92); }
-  60% { transform: scale(1.04); }
-  100% { transform: scale(1); }
 }
 
 /* added figures */
@@ -532,6 +471,8 @@ button.text-btn {
   display: flex;
   align-items: center;
   gap: 5px;
+  max-width: 100%;
+  overflow-wrap: anywhere;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 999px;
@@ -582,22 +523,13 @@ button.text-btn {
 }
 
 /* story options: length slider + include-images toggle */
-.story-options {
+/* story length + pictures: the create form's last row, no card of its own */
+.options-row .deck-group-label::before { display: none; }
+
+.options-row .deck-group-controls {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 14px 16px;
-  margin: 6px 0 4px;
-  box-shadow: var(--shadow);
-}
-
-.option-row {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
 }
 
 .option-label {
@@ -637,6 +569,7 @@ button.text-btn {
 }
 
 .option-toggle {
+  display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: flex-start;
@@ -715,6 +648,20 @@ button.text-btn {
   margin-bottom: 10px;
 }
 
+.deck-group-optional {
+  font-size: 0.9em;
+  opacity: 0.8;
+}
+
+/* each category's picks sit right under (phone) or beside (wide) its own control */
+.category-chips {
+  margin: 8px 0 0;
+}
+
+.category-chips:empty {
+  display: none;
+}
+
 .deck-group-label {
   display: flex;
   align-items: center;
@@ -737,26 +684,30 @@ button.text-btn {
 .deck-group[data-cat="mood"] .deck-group-label { --dot: var(--cat-mood); }
 .deck-group[data-cat="object"] .deck-group-label { --dot: var(--cat-object); }
 
-.deck-row {
+.toggle-chips {
   display: flex;
-  gap: 7px;
-  overflow-x: auto;
-  padding-bottom: 2px;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  cursor: grab;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
-.deck-row::-webkit-scrollbar { display: none; }
-
-.deck-row.dragging {
-  cursor: grabbing;
-  scroll-snap-type: none;
-  user-select: none;
+.toggle-chip {
+  min-height: 44px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  font-size: 0.86rem;
+  background: var(--surface-sunken);
+  border: 1px dashed rgba(198, 172, 143, 0.4);
 }
 
-.deck-row.dragging .token-btn {
-  pointer-events: none;
+.toggle-chip[aria-pressed="true"] {
+  background: rgba(212, 162, 74, 0.18);
+  border: 1px solid var(--gold);
+  color: #f0d394;
+  font-weight: 600;
+}
+
+.toggle-chip[aria-busy="true"] {
+  opacity: 0.6;
 }
 
 .token-btn {
@@ -888,13 +839,30 @@ button.text-btn {
   .story-illustration-pending { animation: none; }
 }
 
-/* pinned CTA - a real flex row between main and bottom-nav, not scroll-tracked */
+/* pinned actions - a real row between main and bottom-nav, not scroll-tracked.
+   Create and Cancel act on the whole story, so they live here rather than in the form */
 .generate-bar {
-  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   padding: 8px 18px;
   max-width: 560px;
   margin: 0 auto;
   width: 100%;
+}
+
+/* Create/Cancel act on the create form - other tabs don't offer to cancel a story you can't see */
+.app-shell:not(:has(#tab-create.active)) .generate-bar { display: none; }
+
+.generate-bar #btn-abandon {
+  flex: 0 0 auto;
+  width: auto;
+  padding: 8px 4px;
+}
+
+.generate-bar #btn-generate {
+  flex: 1 1 auto;
 }
 
 /* history */
@@ -1483,6 +1451,36 @@ button.text-btn {
 
   #generated-story-wrap .story-text { font-size: 1.3rem; }
 
+  /* the create form: label on the start side, controls beside it, one row per category */
+  .deck-group {
+    display: grid;
+    grid-template-columns: 140px minmax(0, 1fr);
+    align-items: start;
+    gap: 12px 24px;
+    margin: 0;
+    padding: 18px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .deck-group-label {
+    margin: 12px 0 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .deck-group-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .deck-group-controls .picker-trigger { width: auto; }
+
+  .category-chips { margin: 0; }
+
   .history-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -1502,11 +1500,32 @@ button.text-btn {
 
   .history-grid .empty-hint { grid-column: 1 / -1; }
 
+  /* full-width footer bar; its contents line up with the form above */
   .generate-bar {
     grid-area: generate;
-    max-width: var(--content-max);
-    padding: 12px 32px;
+    max-width: none;
+    padding: 14px max(32px, calc((100% - var(--content-max)) / 2));
+    background: var(--surface);
+    border-top: 1px solid var(--gold-line);
   }
+
+  .generate-bar #btn-generate {
+    flex: 0 0 auto;
+    width: auto;
+    min-height: 52px;
+    padding: 0 40px;
+    font-size: 1.1rem;
+  }
+
+  .segmented { width: 300px; }
+
+  .options-row .deck-group-controls {
+    flex-direction: row;
+    align-items: center;
+    gap: 24px;
+  }
+
+  #deck > .deck-group:last-child { border-bottom: none; }
 
   /* the footer holds the main action here, so toasts drop in under the header instead */
   .toast {
