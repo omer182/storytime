@@ -61,4 +61,11 @@ try {
   // column already exists
 }
 
+// JSON StoryImagesRecord - which illustration files were saved for the story (null: none)
+try {
+  db.exec('ALTER TABLE stories ADD COLUMN images TEXT');
+} catch {
+  // column already exists
+}
+
 export default db;

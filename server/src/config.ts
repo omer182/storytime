@@ -13,11 +13,20 @@ export interface Config {
   imageModel: string;
   imageQuality: 'low' | 'medium' | 'high';
   dbPath: string;
+  imagesPath: string;
+  mockImageFailScenes: number[];
   figuresPath: string;
   referencePhotosPath: string;
   logLevel: string;
   logPretty: boolean;
 }
+
+// __dirname is server/src in dev (tsx runs .ts in place) and server/dist in prod
+// (tsc-compiled) - both are direct children of server/, so '..' always lands
+// back on server/ regardless of which mode is running.
+const dbPath = process.env.DB_PATH
+  ? path.resolve(process.env.DB_PATH)
+  : path.join(__dirname, '..', 'data', 'stories.db');
 
 const config: Config = {
   port: parseInt(process.env.PORT || '3000', 10) || 3000,
@@ -37,12 +46,18 @@ const config: Config = {
   )
     ? (process.env.IMAGE_QUALITY as 'low' | 'medium' | 'high')
     : 'low',
-  // __dirname is server/src in dev (tsx runs .ts in place) and server/dist in prod
-  // (tsc-compiled) - both are direct children of server/, so '..' always lands
-  // back on server/ regardless of which mode is running.
-  dbPath: process.env.DB_PATH
-    ? path.resolve(process.env.DB_PATH)
-    : path.join(__dirname, '..', 'data', 'stories.db'),
+  dbPath,
+  // persisted story illustrations, one folder per story. Defaults to sitting next to the db
+  // so it lands on the same mounted data volume in docker-compose.
+  imagesPath: process.env.IMAGES_PATH
+    ? path.resolve(process.env.IMAGES_PATH)
+    : path.join(path.dirname(dbPath), 'images'),
+  // mock mode only: scene indexes (comma list, e.g. "0,2") the offline illustrator reports as
+  // failed, so tests can exercise the partial/no-illustration paths
+  mockImageFailScenes: (process.env.MOCK_IMAGE_FAIL_SCENES || '')
+    .split(',')
+    .map((s) => parseInt(s.trim(), 10))
+    .filter((n) => Number.isInteger(n)),
   figuresPath: process.env.FIGURES_PATH
     ? path.resolve(process.env.FIGURES_PATH)
     : path.join(__dirname, '..', 'src', 'data', 'figures.json'),

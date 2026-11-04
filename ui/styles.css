@@ -743,7 +743,7 @@ button.text-btn {
   box-shadow: var(--shadow);
 }
 
-#generated-story-wrap:not(.hidden) .story-page {
+.reading-view:not(.hidden) .story-page {
   animation: page-reveal 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
   transform-origin: right center;
 }
@@ -867,10 +867,11 @@ button.text-btn {
 
 /* history */
 .history-item {
+  position: relative;
+  overflow: hidden;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 14px 16px;
   margin-bottom: 10px;
   box-shadow: var(--shadow);
   cursor: pointer;
@@ -883,6 +884,45 @@ button.text-btn {
     transform: translateY(-2px);
     box-shadow: 0 6px 18px rgba(61, 43, 31, 0.15);
   }
+}
+
+/* the cover is the story's opening illustration (lazy-loaded); text-only stories have none */
+.history-cover {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  background: var(--surface-sunken);
+}
+
+.history-item-body {
+  padding: 14px 16px;
+}
+
+/* opens the story: its ::after covers the whole card, so the card is one tap target while
+   keyboard and screen-reader users get a real button (the favorite star sits above it) */
+.history-open {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: start;
+}
+
+.history-open::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.history-open:focus-visible {
+  outline: none;
+}
+
+.history-item:has(.history-open:focus-visible) {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
 }
 
 .history-item-head {
@@ -901,6 +941,8 @@ button.text-btn {
 }
 
 .favorite-btn {
+  position: relative;
+  z-index: 1;
   flex-shrink: 0;
   border: none;
   background: none;
@@ -918,17 +960,10 @@ button.text-btn {
   margin: 10px 0 0;
 }
 
-.history-item .story-text {
-  margin-top: 10px;
-  font-size: 0.95rem;
-}
-
-.history-item .story-page {
-  box-shadow: none;
-  background: var(--surface-sunken);
-  border-style: dashed;
-  margin: 10px 0 0;
-  padding: 16px 14px;
+button.back-btn {
+  width: auto;
+  padding: 8px 2px;
+  font-size: 0.9rem;
 }
 
 .empty-hint {
@@ -1444,12 +1479,14 @@ button.text-btn {
 
   #tab-history > * { max-width: var(--history-max); }
 
-  #generated-story-wrap {
+  .tab-panel .reading-view {
     max-width: var(--reading-max);
     margin-inline: auto;
   }
 
-  #generated-story-wrap .story-text { font-size: 1.3rem; }
+  .reading-view .story-text { font-size: 1.3rem; }
+
+  .history-cover { aspect-ratio: 4 / 3; }
 
   /* the create form: label on the start side, controls beside it, one row per category */
   .deck-group {
@@ -1489,14 +1526,6 @@ button.text-btn {
   }
 
   .history-grid .history-item { margin: 0; }
-
-  .history-grid .history-item.expanded { grid-column: 1 / -1; }
-
-  /* an expanded card spans the row - keep its text at reading width */
-  .history-grid .history-item.expanded .story-text {
-    max-width: var(--reading-max);
-    margin-inline: auto;
-  }
 
   .history-grid .empty-hint { grid-column: 1 / -1; }
 

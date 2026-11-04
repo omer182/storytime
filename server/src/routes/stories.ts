@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import * as storyService from '../services/storyService';
+import * as illustrationStore from '../services/illustrationStore';
 import logger from '../logger';
 
 const router = Router();
@@ -159,9 +160,10 @@ const VALID_LENGTHS = ['short', 'medium', 'long'];
  *     summary: Collect the illustrations for a story generated in this server run
  *     description: >
  *       Generate returns as soon as the story text is ready and leaves the illustrations
- *       rendering in the background; poll this until status is "done". Illustrations are
- *       memory-only and never persisted, so an unknown or restarted story reports "none".
- *       An entry in images may be null when that one scene could not be drawn.
+ *       rendering in the background; poll this until status is "done". Each entry is the URL of
+ *       a saved scene (see /api/stories/{id}/images/{file}), or null while it is still rendering
+ *       or when it could not be drawn. The job itself is memory-only, so an unknown or restarted
+ *       story reports "none" - GET /api/stories/{id} then lists whatever was saved.
  *     tags: [Stories]
  *     parameters:
  *       - in: path
@@ -185,6 +187,40 @@ router.get('/stories/:id/images', (req: Request, res: Response) => {
   const job = storyService.getImageJob(req.params.id);
   if (!job) return res.json({ status: 'none', images: [] });
   res.json({ status: job.status, images: job.images });
+});
+
+/**
+ * @openapi
+ * /api/stories/{id}/images/{file}:
+ *   get:
+ *     summary: One persisted illustration of a story (scene 0-2, or its history cover)
+ *     tags: [Stories]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *       - in: path
+ *         name: file
+ *         required: true
+ *         schema: { type: string, enum: [0.webp, 1.webp, 2.webp, cover.webp] }
+ *     responses:
+ *       200:
+ *         description: The image (revalidated on each use - regenerating a story re-renders it at the same URL)
+ *         content:
+ *           image/webp: {}
+ *       404: { description: No such illustration }
+ */
+router.get('/stories/:id/images/:file', (req: Request, res: Response) => {
+  const file = illustrationStore.resolveImageFile(req.params.id, req.params.file);
+  if (!file) return res.status(404).json({ error: 'image not found' });
+  res.sendFile(
+    file,
+    { headers: { 'Content-Type': 'image/webp', 'Cache-Control': 'no-cache' } },
+    (err) => {
+      if (err && !res.headersSent) res.status(404).json({ error: 'image not found' });
+    }
+  );
 });
 
 /**
