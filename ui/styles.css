@@ -697,6 +697,8 @@ button.text-btn {
   font-size: 0.86rem;
   background: var(--surface-sunken);
   border: 1px dashed rgba(198, 172, 143, 0.4);
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .toggle-chip[aria-pressed="true"] {
