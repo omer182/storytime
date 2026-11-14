@@ -337,7 +337,14 @@ function syncDeckSelection(): void {
     group.querySelectorAll<HTMLButtonElement>('.toggle-chip').forEach((btn) => {
       const isPicked = picked.some((f) => f.uid === btn.dataset.uid);
       btn.setAttribute('aria-pressed', String(isPicked));
-      btn.textContent = isPicked ? `✓ ${btn.dataset.name}` : btn.dataset.name!;
+      btn.textContent = btn.dataset.name!;
+      if (isPicked) {
+        const check = document.createElement('span');
+        check.className = 'toggle-chip-check';
+        check.textContent = '✓\u00a0'; // a no-break space keeps the ✓ on the name's first line
+        check.setAttribute('aria-hidden', 'true');
+        btn.prepend(check);
+      }
     });
 
     const chips = group.querySelector<HTMLUListElement>('.category-chips');
